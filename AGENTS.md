@@ -12,6 +12,7 @@ You are helping the user run a **Developer Work Assistant** dashboard in Cursor.
 - **Wrap:** Closed today · Still waiting · Tomorrow top 3 → **Wrap** tab.
 - **Drafts:** Slack/Gmail via MCP as **draft only** — never send unless explicitly asked → **Actions** tab.
 - Refresh **SOURCES** status (live/offline) on the Ops setup checklist when MCP auth changes.
+- **Voice:** Hold **Ctrl+M**, say e.g. “Hey Jarvis, what's the update”, **release** (no Enter). **Jarvis PTT** auto-submits after STT — must be running (`scripts/install-jarvis-ptt.sh` + Accessibility → enable **Jarvis PTT**). Agent then opens the dashboard and **speaks aloud only** for Jarvis update/wrap in this workspace; other chats stay silent.
 
 ## Do not
 
