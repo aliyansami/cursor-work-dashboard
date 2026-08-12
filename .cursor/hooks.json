@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/morning-brief.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}
