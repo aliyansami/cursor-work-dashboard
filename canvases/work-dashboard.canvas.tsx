@@ -40,7 +40,6 @@ const WORKSPACE = "Your Workspace";
 
 type SourceStatus = "live" | "degraded" | "offline";
 type ViewId = "brief" | "inbox" | "wrap" | "actions" | "ops";
-type SkinId = "ops" | "morning";
 type DraftChannel = "slack" | "gmail";
 type ScopeId = "all" | "backend" | "frontend" | "client-a" | "internal" | "general";
 
@@ -445,22 +444,7 @@ function actionCount(scope: ScopeId): number {
   return inScope(TASKS, scope).length + inScope(DRAFT_TARGETS, scope).length;
 }
 
-function useSkin(): SkinId {
-  const [skin] = useCanvasState<SkinId>("jarvis-skin", "ops");
-  return skin;
-}
-
-function shellStyle(theme: ReturnType<typeof useHostTheme>, skin: SkinId) {
-  if (skin === "morning") {
-    return {
-      minHeight: "100%" as const,
-      background: theme.bg.editor,
-      color: theme.text.primary,
-      fontFamily: 'var(--vscode-font-family, "Segoe UI", system-ui, sans-serif)',
-      padding: "20px 22px 32px",
-      letterSpacing: "0.01em",
-    };
-  }
+function shellStyle(theme: ReturnType<typeof useHostTheme>) {
   return {
     minHeight: "100%" as const,
     background: theme.bg.chrome,
@@ -470,20 +454,19 @@ function shellStyle(theme: ReturnType<typeof useHostTheme>, skin: SkinId) {
   };
 }
 
-function panelStyle(theme: ReturnType<typeof useHostTheme>, skin: SkinId) {
+function panelStyle(theme: ReturnType<typeof useHostTheme>) {
   return {
     background: theme.bg.elevated,
-    border: `1px solid ${skin === "morning" ? theme.stroke.tertiary : theme.stroke.secondary}`,
-    borderRadius: skin === "morning" ? 12 : 8,
-    padding: skin === "morning" ? "16px 18px" : "14px 16px",
-    marginBottom: skin === "morning" ? 14 : 10,
+    border: `1px solid ${theme.stroke.secondary}`,
+    borderRadius: 8,
+    padding: "14px 16px",
+    marginBottom: 10,
   };
 }
 
 function Shell({ children }: { children: ReactNode }) {
   const theme = useHostTheme();
-  const skin = useSkin();
-  return <div style={shellStyle(theme, skin)}>{children}</div>;
+  return <div style={shellStyle(theme)}>{children}</div>;
 }
 
 function StatusDot({ status }: { status: SourceStatus }) {
@@ -535,8 +518,6 @@ function SetupCheck({ ok }: { ok: boolean }) {
 
 function MissionHeader({ view, setView }: { view: ViewId; setView: (v: ViewId) => void }) {
   const theme = useHostTheme();
-  const skin = useSkin();
-  const [skinState, setSkin] = useCanvasState<SkinId>("jarvis-skin", "ops");
   const tabs: { id: ViewId; label: string }[] = [
     { id: "brief", label: "Brief" },
     { id: "inbox", label: "Inbox" },
@@ -545,7 +526,7 @@ function MissionHeader({ view, setView }: { view: ViewId; setView: (v: ViewId) =
     { id: "ops", label: "Ops" },
   ];
   return (
-    <div style={panelStyle(theme, skin)}>
+    <div style={panelStyle(theme)}>
       <Row align="center" justify="space-between" wrap gap={12}>
         <Stack gap={4}>
           <Row gap={8} align="center" wrap>
@@ -553,45 +534,31 @@ function MissionHeader({ view, setView }: { view: ViewId; setView: (v: ViewId) =
               size="small"
               weight="semibold"
               style={{
-                letterSpacing: skin === "ops" ? "0.14em" : "0.04em",
+                letterSpacing: "0.14em",
                 color: theme.accent.primary,
               }}
             >
-              {skin === "ops" ? "JARVIS // OPS" : "JARVIS · morning brief"}
+              JARVIS // OPS
             </Text>
-            <Pill size="sm">DEMO</Pill>
+            <Pill size="sm" active>
+              LIVE
+            </Pill>
           </Row>
-          <H1 style={{ margin: 0 }}>{skin === "ops" ? "Command center" : "Today"}</H1>
+          <H1 style={{ margin: 0 }}>Command center</H1>
           <Text tone="secondary" size="small">
             {USER} · <Code>{WORKSPACE}</Code> · {GENERATED_AT}
           </Text>
         </Stack>
-        <Stack gap={8} style={{ alignItems: "flex-end" }}>
-          <Row gap={6} wrap>
+        <Row gap={6} wrap>
+          {tabs.map((t) => (
             <Button
-              variant={skinState === "ops" ? "primary" : "secondary"}
-              onClick={() => setSkin("ops")}
+              variant={view === t.id ? "primary" : "secondary"}
+              onClick={() => setView(t.id)}
             >
-              Ops console
+              {t.label}
             </Button>
-            <Button
-              variant={skinState === "morning" ? "primary" : "secondary"}
-              onClick={() => setSkin("morning")}
-            >
-              Morning brief
-            </Button>
-          </Row>
-          <Row gap={6} wrap>
-            {tabs.map((t) => (
-              <Button
-                variant={view === t.id ? "primary" : "secondary"}
-                onClick={() => setView(t.id)}
-              >
-                {t.label}
-              </Button>
-            ))}
-          </Row>
-        </Stack>
+          ))}
+        </Row>
       </Row>
     </div>
   );
@@ -599,7 +566,6 @@ function MissionHeader({ view, setView }: { view: ViewId; setView: (v: ViewId) =
 
 function SetupChecklist() {
   const theme = useHostTheme();
-  const skin = useSkin();
   const live = SOURCES.filter((s) => s.status === "live").length;
   const ready = live === SOURCES.length;
   return (
@@ -655,11 +621,6 @@ function SetupChecklist() {
           checklist.
         </Callout>
       )}
-      {skin === "morning" && (
-        <Text tone="quaternary" size="small">
-          Morning brief skin is active — lighter surfaces and sans type. Switch back in the header.
-        </Text>
-      )}
     </Stack>
   );
 }
@@ -672,14 +633,13 @@ function ChannelSwitcher({
   setScope: (s: ScopeId) => void;
 }) {
   const theme = useHostTheme();
-  const skin = useSkin();
   return (
     <div
       style={{
-        background: skin === "morning" ? theme.bg.elevated : theme.fill.tertiary,
+        background: theme.fill.tertiary,
         border: `1px solid ${theme.stroke.tertiary}`,
-        borderRadius: skin === "morning" ? 12 : 8,
-        padding: skin === "morning" ? "12px 14px" : "10px 12px",
+        borderRadius: 8,
+        padding: "10px 12px",
         marginBottom: 14,
       }}
     >
@@ -688,25 +648,24 @@ function ChannelSwitcher({
           SLACK / PROJECT
         </Text>
         <Text size="small" tone="quaternary">
-          Switch channel → filter tasks, inbox, wrap, drafts
+          Select a project → filter tasks, inbox, wrap, drafts
         </Text>
       </Row>
       <Spacer size={8} />
-      <Row gap={6} wrap>
-        {SCOPES.map((s) => {
+      <Select
+        value={scope}
+        onChange={(v) => setScope(v as ScopeId)}
+        placeholder="All projects"
+        style={{ width: "100%", maxWidth: 420 }}
+        options={SCOPES.map((s) => {
           const actions = actionCount(s.id);
-          const active = scope === s.id;
-          return (
-            <Button
-              variant={active ? "primary" : "secondary"}
-              onClick={() => setScope(s.id)}
-            >
-              {s.short}
-              {actions > 0 ? ` · ${actions}` : ""}
-            </Button>
-          );
+          const base = s.slack ? `${s.short} · ${s.slack}` : s.short;
+          return {
+            value: s.id,
+            label: actions > 0 ? `${base} · ${actions}` : base,
+          };
         })}
-      </Row>
+      />
       {scope !== "all" && (
         <>
           <Spacer size={8} />
@@ -1348,27 +1307,10 @@ function ActionsView({ scope }: { scope: ScopeId }) {
 }
 
 function OpsView({ scope, setScope }: { scope: ScopeId; setScope: (s: ScopeId) => void }) {
-  const [skin, setSkin] = useCanvasState<SkinId>("jarvis-skin", "ops");
   const projects = inScope(PROJECTS, scope);
   return (
     <Stack gap={14}>
       <SetupChecklist />
-      <Divider />
-      <H2>Theme preset</H2>
-      <Text tone="tertiary" size="small">
-        Ops console = monospace command deck. Morning brief = lighter sans surfaces for daily skim.
-      </Text>
-      <Row gap={8} wrap>
-        <Button variant={skin === "ops" ? "primary" : "secondary"} onClick={() => setSkin("ops")}>
-          Ops console
-        </Button>
-        <Button
-          variant={skin === "morning" ? "primary" : "secondary"}
-          onClick={() => setSkin("morning")}
-        >
-          Morning brief
-        </Button>
-      </Row>
       <Divider />
       <H2>Project matrix</H2>
       <ProjectGrid items={projects.length ? projects : PROJECTS} />
