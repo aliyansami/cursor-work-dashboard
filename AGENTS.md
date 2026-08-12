@@ -11,6 +11,7 @@ You are helping the user run a **Developer Work Assistant** dashboard in Cursor.
 - Never invent deadlines, assignments, or priorities — mark CONFIRMED / INFERRED / UNKNOWN.
 - **Wrap:** Closed today · Still waiting · Tomorrow top 3 → **Wrap** tab.
 - **Drafts:** Slack/Gmail via MCP as **draft only** — never send unless explicitly asked → **Actions** tab.
+- Refresh **SOURCES** status (live/offline) on the Ops setup checklist when MCP auth changes.
 
 ## Do not
 
