@@ -11,7 +11,7 @@ This repo is meant to be **cloned and customized**. It ships **demo data only**.
 
 | Piece | Purpose |
 |-------|---------|
-| `canvases/work-dashboard.canvas.tsx` | **Ops-console** Canvas — Brief / Inbox / Wrap / Actions / Ops |
+| `canvases/work-dashboard.canvas.tsx` | **Ops-console** Canvas — Brief / Inbox / Wrap / Actions / Ops · theme presets · MCP setup checklist |
 | `docs/WORK-ASSISTANT.md` | Agent operating rules (filter → prioritize → organize) |
 | `docs/JARVIS-RULE.md` | Optional “Hey Jarvis…” voice/command phrases |
 | `docs/AUTOMATION.md` | Morning refresh hook, 09:00 Automation, `/loop`, EOD wrap |
@@ -25,7 +25,8 @@ This repo is meant to be **cloned and customized**. It ships **demo data only**.
 - **Inbox** — Slack thread starts + email (clickable links)
 - **Wrap** — end-of-day: closed · still waiting · tomorrow top 3
 - **Actions** — compose Slack/Gmail drafts (Agent creates drafts only — never auto-send)
-- **Ops** — project matrix + MCP link health + automation pointer
+- **Ops** — MCP setup checklist (live/offline per source) + project matrix + link health + automation pointer
+- **Theme presets** — **Ops console** (monospace command deck) vs **Morning brief** (lighter sans surfaces); toggle in header or Ops tab
 
 ## Quick start
 

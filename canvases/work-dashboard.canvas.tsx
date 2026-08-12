@@ -40,6 +40,7 @@ const WORKSPACE = "Your Workspace";
 
 type SourceStatus = "live" | "degraded" | "offline";
 type ViewId = "brief" | "inbox" | "wrap" | "actions" | "ops";
+type SkinId = "ops" | "morning";
 type DraftChannel = "slack" | "gmail";
 type ScopeId = "all" | "backend" | "frontend" | "client-a" | "internal" | "general";
 
@@ -57,6 +58,8 @@ interface SourceRow {
   account: string;
   status: SourceStatus;
   note: string;
+  /** How to authenticate this MCP (shown when not live) */
+  setup: string;
 }
 
 interface WorkItem {
@@ -160,10 +163,34 @@ const SCOPES: Scope[] = [
 ];
 
 const SOURCES: SourceRow[] = [
-  { name: "Slack", account: "your-workspace", status: "offline", note: "Connect MCP" },
-  { name: "Gmail", account: EMAIL, status: "offline", note: "Connect MCP" },
-  { name: "Calendar", account: EMAIL, status: "offline", note: "Connect MCP" },
-  { name: "GitHub", account: "your-github", status: "offline", note: "Add PAT in settings" },
+  {
+    name: "Slack",
+    account: "your-workspace",
+    status: "offline",
+    note: "Connect MCP",
+    setup: "Settings → Tools & MCP → Slack → OAuth",
+  },
+  {
+    name: "Gmail",
+    account: EMAIL,
+    status: "offline",
+    note: "Connect MCP",
+    setup: "Settings → Tools & MCP → Gmail → work Google account",
+  },
+  {
+    name: "Calendar",
+    account: EMAIL,
+    status: "offline",
+    note: "Connect MCP",
+    setup: "Settings → Tools & MCP → Google Calendar",
+  },
+  {
+    name: "GitHub",
+    account: "your-github",
+    status: "offline",
+    note: "Add PAT in settings",
+    setup: "Settings → Tools & MCP → GitHub → paste raw PAT (never commit)",
+  },
 ];
 
 const TASKS: WorkItem[] = [
@@ -418,21 +445,45 @@ function actionCount(scope: ScopeId): number {
   return inScope(TASKS, scope).length + inScope(DRAFT_TARGETS, scope).length;
 }
 
+function useSkin(): SkinId {
+  const [skin] = useCanvasState<SkinId>("jarvis-skin", "ops");
+  return skin;
+}
+
+function shellStyle(theme: ReturnType<typeof useHostTheme>, skin: SkinId) {
+  if (skin === "morning") {
+    return {
+      minHeight: "100%" as const,
+      background: theme.bg.editor,
+      color: theme.text.primary,
+      fontFamily: 'var(--vscode-font-family, "Segoe UI", system-ui, sans-serif)',
+      padding: "20px 22px 32px",
+      letterSpacing: "0.01em",
+    };
+  }
+  return {
+    minHeight: "100%" as const,
+    background: theme.bg.chrome,
+    color: theme.text.primary,
+    fontFamily: "var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)",
+    padding: "16px 18px 28px",
+  };
+}
+
+function panelStyle(theme: ReturnType<typeof useHostTheme>, skin: SkinId) {
+  return {
+    background: theme.bg.elevated,
+    border: `1px solid ${skin === "morning" ? theme.stroke.tertiary : theme.stroke.secondary}`,
+    borderRadius: skin === "morning" ? 12 : 8,
+    padding: skin === "morning" ? "16px 18px" : "14px 16px",
+    marginBottom: skin === "morning" ? 14 : 10,
+  };
+}
+
 function Shell({ children }: { children: ReactNode }) {
   const theme = useHostTheme();
-  return (
-    <div
-      style={{
-        minHeight: "100%",
-        background: theme.bg.chrome,
-        color: theme.text.primary,
-        fontFamily: "var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)",
-        padding: "16px 18px 28px",
-      }}
-    >
-      {children}
-    </div>
-  );
+  const skin = useSkin();
+  return <div style={shellStyle(theme, skin)}>{children}</div>;
 }
 
 function StatusDot({ status }: { status: SourceStatus }) {
@@ -457,8 +508,35 @@ function StatusDot({ status }: { status: SourceStatus }) {
   );
 }
 
+function SetupCheck({ ok }: { ok: boolean }) {
+  const theme = useHostTheme();
+  return (
+    <span
+      style={{
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        border: `1.5px solid ${ok ? theme.diff.stripAdded : theme.stroke.secondary}`,
+        background: ok ? theme.diff.stripAdded : theme.fill.quaternary,
+        color: theme.bg.chrome,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 12,
+        fontWeight: 700,
+        flexShrink: 0,
+        lineHeight: 1,
+      }}
+    >
+      {ok ? "✓" : ""}
+    </span>
+  );
+}
+
 function MissionHeader({ view, setView }: { view: ViewId; setView: (v: ViewId) => void }) {
   const theme = useHostTheme();
+  const skin = useSkin();
+  const [skinState, setSkin] = useCanvasState<SkinId>("jarvis-skin", "ops");
   const tabs: { id: ViewId; label: string }[] = [
     { id: "brief", label: "Brief" },
     { id: "inbox", label: "Inbox" },
@@ -467,44 +545,122 @@ function MissionHeader({ view, setView }: { view: ViewId; setView: (v: ViewId) =
     { id: "ops", label: "Ops" },
   ];
   return (
-    <div
-      style={{
-        background: theme.bg.elevated,
-        border: `1px solid ${theme.stroke.secondary}`,
-        borderRadius: 8,
-        padding: "14px 16px",
-        marginBottom: 10,
-      }}
-    >
+    <div style={panelStyle(theme, skin)}>
       <Row align="center" justify="space-between" wrap gap={12}>
         <Stack gap={4}>
-          <Row gap={8} align="center">
+          <Row gap={8} align="center" wrap>
             <Text
               size="small"
               weight="semibold"
-              style={{ letterSpacing: "0.14em", color: theme.accent.primary }}
+              style={{
+                letterSpacing: skin === "ops" ? "0.14em" : "0.04em",
+                color: theme.accent.primary,
+              }}
             >
-              JARVIS // OPS
+              {skin === "ops" ? "JARVIS // OPS" : "JARVIS · morning brief"}
             </Text>
             <Pill size="sm">DEMO</Pill>
           </Row>
-          <H1 style={{ margin: 0 }}>Command center</H1>
+          <H1 style={{ margin: 0 }}>{skin === "ops" ? "Command center" : "Today"}</H1>
           <Text tone="secondary" size="small">
             {USER} · <Code>{WORKSPACE}</Code> · {GENERATED_AT}
           </Text>
         </Stack>
-        <Row gap={6} wrap>
-          {tabs.map((t) => (
+        <Stack gap={8} style={{ alignItems: "flex-end" }}>
+          <Row gap={6} wrap>
             <Button
-              variant={view === t.id ? "primary" : "secondary"}
-              onClick={() => setView(t.id)}
+              variant={skinState === "ops" ? "primary" : "secondary"}
+              onClick={() => setSkin("ops")}
             >
-              {t.label}
+              Ops console
             </Button>
-          ))}
-        </Row>
+            <Button
+              variant={skinState === "morning" ? "primary" : "secondary"}
+              onClick={() => setSkin("morning")}
+            >
+              Morning brief
+            </Button>
+          </Row>
+          <Row gap={6} wrap>
+            {tabs.map((t) => (
+              <Button
+                variant={view === t.id ? "primary" : "secondary"}
+                onClick={() => setView(t.id)}
+              >
+                {t.label}
+              </Button>
+            ))}
+          </Row>
+        </Stack>
       </Row>
     </div>
+  );
+}
+
+function SetupChecklist() {
+  const theme = useHostTheme();
+  const skin = useSkin();
+  const live = SOURCES.filter((s) => s.status === "live").length;
+  const ready = live === SOURCES.length;
+  return (
+    <Stack gap={10}>
+      <Row align="center" justify="space-between" wrap gap={8}>
+        <H2>Setup checklist</H2>
+        <Pill size="sm" active={ready}>
+          {live}/{SOURCES.length} MCP READY
+        </Pill>
+      </Row>
+      <Text tone="tertiary" size="small">
+        Green check = authenticated. Agent sets status to live on refresh after you connect each MCP.
+      </Text>
+      <Stack gap={0}>
+        {SOURCES.map((s) => {
+          const ok = s.status === "live";
+          return (
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "flex-start",
+                padding: "12px 0",
+                borderBottom: `1px solid ${theme.stroke.tertiary}`,
+              }}
+            >
+              <SetupCheck ok={ok} />
+              <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                <Row gap={8} align="center" wrap>
+                  <Text weight="semibold">{s.name}</Text>
+                  <Pill size="sm">{s.status.toUpperCase()}</Pill>
+                </Row>
+                <Text tone="secondary" size="small">
+                  {s.account} · {s.note}
+                </Text>
+                {!ok && (
+                  <Text tone="quaternary" size="small">
+                    Setup · {s.setup}
+                  </Text>
+                )}
+              </Stack>
+            </div>
+          );
+        })}
+      </Stack>
+      {ready ? (
+        <Callout tone="success" title="All links up">
+          Slack, Gmail, Calendar, and GitHub are live. Say &quot;Hey Jarvis, refresh&quot; anytime.
+        </Callout>
+      ) : (
+        <Callout tone="warning" title="Finish MCP setup">
+          Connect remaining sources in Cursor Settings → Tools & MCP, then ask Agent to refresh this
+          checklist.
+        </Callout>
+      )}
+      {skin === "morning" && (
+        <Text tone="quaternary" size="small">
+          Morning brief skin is active — lighter surfaces and sans type. Switch back in the header.
+        </Text>
+      )}
+    </Stack>
   );
 }
 
@@ -516,13 +672,14 @@ function ChannelSwitcher({
   setScope: (s: ScopeId) => void;
 }) {
   const theme = useHostTheme();
+  const skin = useSkin();
   return (
     <div
       style={{
-        background: theme.fill.tertiary,
+        background: skin === "morning" ? theme.bg.elevated : theme.fill.tertiary,
         border: `1px solid ${theme.stroke.tertiary}`,
-        borderRadius: 8,
-        padding: "10px 12px",
+        borderRadius: skin === "morning" ? 12 : 8,
+        padding: skin === "morning" ? "12px 14px" : "10px 12px",
         marginBottom: 14,
       }}
     >
@@ -1191,9 +1348,28 @@ function ActionsView({ scope }: { scope: ScopeId }) {
 }
 
 function OpsView({ scope, setScope }: { scope: ScopeId; setScope: (s: ScopeId) => void }) {
+  const [skin, setSkin] = useCanvasState<SkinId>("jarvis-skin", "ops");
   const projects = inScope(PROJECTS, scope);
   return (
     <Stack gap={14}>
+      <SetupChecklist />
+      <Divider />
+      <H2>Theme preset</H2>
+      <Text tone="tertiary" size="small">
+        Ops console = monospace command deck. Morning brief = lighter sans surfaces for daily skim.
+      </Text>
+      <Row gap={8} wrap>
+        <Button variant={skin === "ops" ? "primary" : "secondary"} onClick={() => setSkin("ops")}>
+          Ops console
+        </Button>
+        <Button
+          variant={skin === "morning" ? "primary" : "secondary"}
+          onClick={() => setSkin("morning")}
+        >
+          Morning brief
+        </Button>
+      </Row>
+      <Divider />
       <H2>Project matrix</H2>
       <ProjectGrid items={projects.length ? projects : PROJECTS} />
       <Divider />
