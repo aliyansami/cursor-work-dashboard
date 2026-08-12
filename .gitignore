@@ -1,0 +1,25 @@
+# Secrets & env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+**/credentials*.json
+**/secrets*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+!.vscode/extensions.json
+
+# Node (if added later)
+node_modules/
+dist/
+build/
+coverage/
+
+# Local Cursor caches (never commit tokens)
+.cursor/mcp.json
+**/mcp.local.json
