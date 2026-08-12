@@ -6,6 +6,18 @@
         "command": ".cursor/hooks/morning-brief.sh",
         "timeout": 10
       }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": ".cursor/hooks/jarvis-arm-speak.py",
+        "timeout": 5
+      }
+    ],
+    "afterAgentResponse": [
+      {
+        "command": ".cursor/hooks/jarvis-speak-response.py",
+        "timeout": 30
+      }
     ]
   }
 }
