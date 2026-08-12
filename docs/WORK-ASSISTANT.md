@@ -46,6 +46,28 @@ PROJECT / TASK / CONTEXT / EXPECTED BEHAVIOR / KNOWN ISSUES / SOURCES / AREAS / 
 
 Do not implement unless explicitly asked.
 
+## End-of-day wrap
+
+When asked for wrap / EOD / “Hey Jarvis, wrap”:
+
+1. **Closed today** — only items CONFIRMED done (calendar past + done, explicit replies, merged PRs). Do not invent closures.
+2. **Still waiting** — blockers / waiting-for with age when known.
+3. **Tomorrow top 3** — actionable priorities for the next workday + tomorrow’s calendar.
+
+Update the canvas **Wrap** tab. Lead the chat with a short verdict.
+
+## Drafts (quick actions)
+
+When asked to draft Slack or Gmail:
+
+- Create **draft only** via MCP (`create_draft` / Slack draft tools).
+- **Never send** unless the user explicitly says send / post / deliver.
+- Prefer updating the canvas **Actions** tab with the draft body + DRAFT READY.
+
+## Automation
+
+Morning refresh options (hook, scheduled Automation, `/loop`): see `docs/AUTOMATION.md`.
+
 ## Honesty
 
 Never invent deadlines, requirements, or ownership. Label CONFIRMED / INFERRED / UNKNOWN.
