@@ -11,11 +11,17 @@ This repo is meant to be **cloned and customized**. It ships **demo data only**.
 
 | Piece | Purpose |
 |-------|---------|
-| `canvases/work-dashboard.canvas.tsx` | Live Canvas UI (command center + inbox) |
+| `canvases/work-dashboard.canvas.tsx` | **Ops-console** Canvas UI — Brief / Inbox / Ops tabs, attention bar, project matrix |
 | `docs/WORK-ASSISTANT.md` | Agent operating rules (filter → prioritize → organize) |
 | `docs/JARVIS-RULE.md` | Optional “Hey Jarvis…” voice/command phrases |
 | `docs/SETUP.md` | Connect Slack / Gmail / Calendar / GitHub MCP |
 | `AGENTS.md` | Short agent entrypoint for this project |
+
+### UI views
+
+- **Brief** — priorities, tasks, schedule
+- **Inbox** — Slack thread starts + email (clickable links)
+- **Ops** — project matrix + MCP link health
 
 ## Quick start
 

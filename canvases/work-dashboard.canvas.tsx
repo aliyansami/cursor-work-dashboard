@@ -3,30 +3,29 @@
  *
  * Demo data only. No real accounts, tokens, or private messages.
  * Ask your Agent: "Refresh the work dashboard from my Slack/Gmail/GitHub"
- * to replace DEMO_* rows with your live (local) data — never commit secrets.
- *
- * Canvas SDK: import only from "cursor/canvas".
+ * to replace demo rows with your live data — never commit secrets.
  */
 import type { ReactNode } from "react";
 import {
+  Button,
   Callout,
-  Card,
-  CardBody,
-  CardHeader,
   Code,
-  CollapsibleSection,
   Divider,
   Grid,
   H1,
   H2,
+  H3,
   Link,
   Pill,
   Row,
   Spacer,
   Stack,
   Stat,
+  Swatch,
   Table,
   Text,
+  UsageBar,
+  useCanvasState,
   useHostTheme,
 } from "cursor/canvas";
 
@@ -36,6 +35,7 @@ const EMAIL = "you@example.com";
 const WORKSPACE = "Your Workspace";
 
 type SourceStatus = "live" | "degraded" | "offline";
+type ViewId = "brief" | "inbox" | "ops";
 
 interface SourceRow {
   name: string;
@@ -66,43 +66,10 @@ type FeedItem = {
 };
 
 const SOURCES: SourceRow[] = [
-  {
-    name: "Slack",
-    account: "your-workspace",
-    status: "offline",
-    note: "Connect Slack MCP · then refresh",
-  },
-  {
-    name: "Gmail",
-    account: EMAIL,
-    status: "offline",
-    note: "Connect Gmail MCP · then refresh",
-  },
-  {
-    name: "Google Calendar",
-    account: EMAIL,
-    status: "offline",
-    note: "Connect Calendar MCP · then refresh",
-  },
-  {
-    name: "GitHub",
-    account: "your-github",
-    status: "offline",
-    note: "Add PAT in MCP settings (never commit it)",
-  },
-];
-
-const HIGH_PRIORITY: WorkItem[] = [
-  {
-    id: "demo-hp-1",
-    title: "Reproduce login 401 after token refresh",
-    project: "Demo Backend",
-    priority: "high",
-    source: "Slack · #demo-backend",
-    status: "Action required",
-    detail: "DEMO · Users report 401 after refresh — investigate auth flow",
-    href: "https://github.com",
-  },
+  { name: "Slack", account: "your-workspace", status: "offline", note: "Connect MCP" },
+  { name: "Gmail", account: EMAIL, status: "offline", note: "Connect MCP" },
+  { name: "Calendar", account: EMAIL, status: "offline", note: "Connect MCP" },
+  { name: "GitHub", account: "your-github", status: "offline", note: "Add PAT in settings" },
 ];
 
 const TASKS: WorkItem[] = [
@@ -113,59 +80,30 @@ const TASKS: WorkItem[] = [
     priority: "medium",
     source: "GitHub",
     status: "Open PR",
-    detail: "DEMO · Replace with your open PRs on refresh",
+    detail: "DEMO · replace on refresh",
     href: "https://github.com",
   },
-];
-
-const CALENDAR_TODAY = [
   {
-    time: "10:00 – 10:30",
-    title: "Team standup",
-    organizer: "Demo Organizer",
-    status: "upcoming",
+    id: "demo-task-2",
+    title: "Investigate refresh-token 401s",
+    project: "Demo Backend",
+    priority: "high",
+    source: "Slack",
+    status: "Action",
+    detail: "DEMO · sample high-priority task",
+    href: "https://slack.com",
   },
 ];
 
+const CALENDAR_TODAY = [{ time: "10:00–10:30", title: "Team standup", status: "done" }];
 const CALENDAR_TOMORROW = [
-  {
-    time: "14:00 – 14:30",
-    title: "Client sync",
-    organizer: "Demo Organizer",
-  },
-];
-
-const FYI: WorkItem[] = [
-  {
-    id: "demo-fyi-1",
-    title: "Example security notice",
-    project: "Unknown",
-    priority: "low",
-    source: "Gmail · automated",
-    status: "No action",
-    detail: "DEMO · Automated alerts belong in FYI, not Tasks",
-  },
-];
-
-const PROJECTS = [
-  {
-    name: "DEMO BACKEND",
-    high: 1,
-    tasks: 0,
-    update: "Sample project card — replaced when you refresh with live data.",
-  },
-  {
-    name: "DEMO FRONTEND",
-    high: 0,
-    tasks: 1,
-    update: "Sample open PR tracking.",
-  },
+  { time: "14:00–14:30", title: "Client sync", status: "upcoming" },
 ];
 
 const PRIORITIES = [
-  "Connect Slack, Gmail, Calendar, and GitHub MCP (see docs/SETUP.md)",
-  "Ask Agent: Refresh the work dashboard from my connected sources",
-  "Optional: add the Jarvis rule from docs/JARVIS-RULE.md",
+  { n: "01", text: "Connect Slack, Gmail, Calendar, GitHub MCP", href: undefined },
+  { n: "02", text: "Ask Agent to refresh this dashboard", href: undefined },
+  { n: "03", text: "Optional: add Jarvis rule from docs/JARVIS-RULE.md", href: undefined },
 ];
 
 const SLACK_THREADS: FeedItem[] = [
@@ -173,15 +111,15 @@ const SLACK_THREADS: FeedItem[] = [
     id: "demo-s1",
     title: "#demo-backend",
     preview: "Alex: Can someone check the refresh-token 401s?",
-    meta: "DEMO · thread start · click would open Slack",
+    meta: "DEMO · thread start",
     href: "https://slack.com",
     tag: "Demo",
   },
   {
     id: "demo-s2",
     title: "#demo-frontend",
-    preview: "Sam: Logo looks cropped on mobile — thread started",
-    meta: "DEMO · thread start only (not every reply)",
+    preview: "Sam: Logo cropped on mobile — thread started",
+    meta: "DEMO · thread start",
     href: "https://slack.com",
     tag: "Demo",
   },
@@ -191,33 +129,28 @@ const EMAILS: FeedItem[] = [
   {
     id: "demo-e1",
     title: "Invite: collaborate on demo/repo",
-    preview: "Example actionable email — accept or decline",
-    meta: "DEMO · click would open Gmail",
+    preview: "Example actionable email",
+    meta: "DEMO",
     href: "https://mail.google.com",
-    tag: "Action?",
+    tag: "Action",
   },
   {
     id: "demo-e2",
     title: "Automated security alert",
     preview: "Example FYI — no reply required",
-    meta: "DEMO · unread style",
+    meta: "DEMO · unread",
     href: "https://mail.google.com",
-    tag: "Security",
+    tag: "Sec",
     unread: true,
   },
 ];
 
-function statusPill(status: SourceStatus) {
-  if (status === "live") return <Pill size="sm">LIVE</Pill>;
-  if (status === "degraded") return <Pill size="sm">DEGRADED</Pill>;
-  return <Pill size="sm">OFFLINE</Pill>;
-}
-
-function priorityTone(p: WorkItem["priority"]): "danger" | "warning" | undefined {
-  if (p === "high") return "danger";
-  if (p === "medium") return "warning";
-  return undefined;
-}
+const PROJECTS = [
+  { name: "Backend", color: "blue" as const, load: 45, note: "Sample project card" },
+  { name: "Frontend", color: "orange" as const, load: 30, note: "Sample open PR" },
+  { name: "Client A", color: "green" as const, load: 15, note: "Sync tomorrow" },
+  { name: "Internal", color: "purple" as const, load: 10, note: "Low activity" },
+];
 
 function Shell({ children }: { children: ReactNode }) {
   const theme = useHostTheme();
@@ -225,10 +158,10 @@ function Shell({ children }: { children: ReactNode }) {
     <div
       style={{
         minHeight: "100%",
-        background: theme.bg.editor,
+        background: theme.bg.chrome,
         color: theme.text.primary,
-        fontFamily: "var(--vscode-font-family, system-ui, sans-serif)",
-        padding: "20px 24px 32px",
+        fontFamily: "var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        padding: "16px 18px 28px",
       }}
     >
       {children}
@@ -236,88 +169,187 @@ function Shell({ children }: { children: ReactNode }) {
   );
 }
 
-function HeaderBar() {
+function StatusDot({ status }: { status: SourceStatus }) {
+  const theme = useHostTheme();
+  const color =
+    status === "live"
+      ? theme.diff.stripAdded
+      : status === "degraded"
+        ? theme.accent.primary
+        : theme.text.quaternary;
   return (
-    <div style={{ paddingBottom: 16, marginBottom: 12 }}>
-      <Row align="center" justify="space-between" wrap>
+    <span
+      style={{
+        width: 7,
+        height: 7,
+        borderRadius: 99,
+        background: color,
+        display: "inline-block",
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function MissionHeader({ view, setView }: { view: ViewId; setView: (v: ViewId) => void }) {
+  const theme = useHostTheme();
+  return (
+    <div
+      style={{
+        background: theme.bg.elevated,
+        border: `1px solid ${theme.stroke.secondary}`,
+        borderRadius: 8,
+        padding: "14px 16px",
+        marginBottom: 14,
+      }}
+    >
+      <Row align="center" justify="space-between" wrap gap={12}>
         <Stack gap={4}>
-          <Text tone="tertiary" size="small">
-            CURSOR WORK DASHBOARD · TEMPLATE
-          </Text>
-          <H1>Today</H1>
-          <Text tone="secondary">
-            {USER} · <Code>{EMAIL}</Code> · {WORKSPACE}
-          </Text>
-        </Stack>
-        <Stack gap={4}>
-          <Row justify="end">
+          <Row gap={8} align="center">
+            <Text
+              size="small"
+              weight="semibold"
+              style={{ letterSpacing: "0.14em", color: theme.accent.primary }}
+            >
+              JARVIS // OPS
+            </Text>
             <Pill size="sm">DEMO</Pill>
           </Row>
-          <Text tone="tertiary" size="small">
-            {GENERATED_AT}
+          <H1 style={{ margin: 0 }}>Command center</H1>
+          <Text tone="secondary" size="small">
+            {USER} · <Code>{WORKSPACE}</Code> · {GENERATED_AT}
           </Text>
         </Stack>
+        <Row gap={6} wrap>
+          <Button variant={view === "brief" ? "primary" : "secondary"} onClick={() => setView("brief")}>
+            Brief
+          </Button>
+          <Button variant={view === "inbox" ? "primary" : "secondary"} onClick={() => setView("inbox")}>
+            Inbox
+          </Button>
+          <Button variant={view === "ops" ? "primary" : "secondary"} onClick={() => setView("ops")}>
+            Ops
+          </Button>
+        </Row>
       </Row>
     </div>
   );
 }
 
-function SourceGrid() {
+function SignalStrip() {
+  const theme = useHostTheme();
+  const live = SOURCES.filter((s) => s.status === "live").length;
   return (
-    <Grid columns={4} gap={12}>
+    <Stack gap={10}>
+      <Grid columns={4} gap={10}>
+        <Stat value={TASKS.length} label="Actions" tone="warning" />
+        <Stat value={SLACK_THREADS.length} label="Slack" />
+        <Stat value={EMAILS.filter((e) => e.unread).length} label="Unread mail" tone="warning" />
+        <Stat value={`${live}/4`} label="Links up" />
+      </Grid>
+      <div style={{ background: theme.fill.tertiary, borderRadius: 6, padding: "10px 12px" }}>
+        <Text size="small" tone="tertiary" weight="medium">
+          ATTENTION LOAD
+        </Text>
+        <Spacer size={6} />
+        <UsageBar
+          total={10}
+          topLeftLabel="Attention mix"
+          topRightLabel="demo"
+          segments={[
+            { id: "tasks", value: 2, color: "orange" },
+            { id: "slack", value: 2, color: "blue" },
+            { id: "unread", value: 1, color: "red" },
+            { id: "clear", value: 5, color: "green" },
+          ]}
+        />
+      </div>
+    </Stack>
+  );
+}
+
+function SourceRail() {
+  const theme = useHostTheme();
+  return (
+    <Row gap={8} wrap>
       {SOURCES.map((s) => (
-        <Card>
-          <CardHeader trailing={statusPill(s.status)}>{s.name}</CardHeader>
-          <CardBody>
-            <Stack gap={4}>
-              <Code>{s.account}</Code>
-              <Text tone="tertiary" size="small">
-                {s.note}
-              </Text>
-            </Stack>
-          </CardBody>
-        </Card>
-      ))}
-    </Grid>
-  );
-}
-
-function MetricsRow() {
-  const actionable = HIGH_PRIORITY.length + TASKS.length;
-  return (
-    <Grid columns={4} gap={12}>
-      <Stat value={actionable} label="Action items" tone="warning" />
-      <Stat value={SLACK_THREADS.length} label="Slack threads" />
-      <Stat value={EMAILS.length} label="Emails shown" />
-      <Stat value={0} label="Sources live" />
-    </Grid>
-  );
-}
-
-function ItemTable({ items }: { items: WorkItem[] }) {
-  if (items.length === 0) return null;
-  return (
-    <Table
-      framed
-      striped
-      headers={["Item", "Project", "Priority", "Source", "Status"]}
-      rows={items.map((item) => [
-        <Stack gap={2}>
-          {item.href ? (
-            <Link href={item.href}>{item.title}</Link>
-          ) : (
-            <Text weight="semibold">{item.title}</Text>
-          )}
+        <div
+          style={{
+            border: `1px solid ${theme.stroke.tertiary}`,
+            background: theme.fill.quaternary,
+            borderRadius: 6,
+            padding: "8px 10px",
+            minWidth: 120,
+          }}
+        >
+          <Row gap={6} align="center">
+            <StatusDot status={s.status} />
+            <Text weight="semibold" size="small">
+              {s.name}
+            </Text>
+          </Row>
           <Text tone="tertiary" size="small">
-            {item.detail}
+            {s.account}
           </Text>
-        </Stack>,
-        item.project,
-        <Stat value={item.priority.toUpperCase()} tone={priorityTone(item.priority)} label="" />,
-        item.source,
-        item.status,
-      ])}
-    />
+        </div>
+      ))}
+    </Row>
+  );
+}
+
+function PriorityStack() {
+  const theme = useHostTheme();
+  return (
+    <Stack gap={0}>
+      {PRIORITIES.map((p) => (
+        <div style={{ borderBottom: `1px solid ${theme.stroke.tertiary}`, padding: "12px 0" }}>
+          <Row gap={12} align="start">
+            <Text
+              weight="bold"
+              style={{
+                color: theme.accent.primary,
+                fontVariantNumeric: "tabular-nums",
+                minWidth: 28,
+              }}
+            >
+              {p.n}
+            </Text>
+            {p.href ? <Link href={p.href}>{p.text}</Link> : <Text weight="medium">{p.text}</Text>}
+          </Row>
+        </div>
+      ))}
+    </Stack>
+  );
+}
+
+function TaskCards() {
+  const theme = useHostTheme();
+  return (
+    <Stack gap={8}>
+      {TASKS.map((t) => (
+        <div
+          style={{
+            border: `1px solid ${theme.stroke.secondary}`,
+            borderLeft: `3px solid ${theme.accent.primary}`,
+            borderRadius: 6,
+            padding: "10px 12px",
+            background: theme.bg.elevated,
+          }}
+        >
+          <Row align="center" justify="space-between" gap={8} wrap>
+            <Pill size="sm">{t.priority.toUpperCase()}</Pill>
+            <Text tone="tertiary" size="small">
+              {t.project}
+            </Text>
+          </Row>
+          <Spacer size={6} />
+          {t.href ? <Link href={t.href}>{t.title}</Link> : <Text weight="semibold">{t.title}</Text>}
+          <Text tone="secondary" size="small">
+            {t.detail} · {t.source}
+          </Text>
+        </div>
+      ))}
+    </Stack>
   );
 }
 
@@ -326,205 +358,189 @@ function FeedRow({ item }: { item: FeedItem }) {
   return (
     <div
       style={{
-        borderBottom: `1px solid ${theme.stroke.tertiary}`,
+        display: "flex",
+        gap: 10,
         padding: "10px 0",
+        borderBottom: `1px solid ${theme.stroke.tertiary}`,
       }}
     >
-      <Row align="start" justify="space-between" gap={12}>
-        <Stack gap={3} style={{ flex: 1, minWidth: 0 }}>
-          <Row gap={8} align="center" wrap>
-            {item.unread && <Pill size="sm">UNREAD</Pill>}
-            {item.tag && <Pill size="sm">{item.tag}</Pill>}
-            <Text tone="tertiary" size="small">
-              {item.meta}
-            </Text>
-          </Row>
-          <Link href={item.href}>{item.title}</Link>
-          <Text tone="secondary" size="small">
-            {item.preview}
+      <div
+        style={{
+          width: 3,
+          borderRadius: 2,
+          background: item.unread ? theme.accent.primary : theme.stroke.secondary,
+          flexShrink: 0,
+          alignSelf: "stretch",
+        }}
+      />
+      <Stack gap={3} style={{ flex: 1, minWidth: 0 }}>
+        <Row gap={6} align="center" wrap>
+          {item.unread && (
+            <Pill size="sm" active>
+              NEW
+            </Pill>
+          )}
+          {item.tag && <Pill size="sm">{item.tag}</Pill>}
+          <Text tone="quaternary" size="small">
+            {item.meta}
           </Text>
-        </Stack>
-        <Text tone="tertiary" size="small">
-          Open
+        </Row>
+        <Link href={item.href}>{item.title}</Link>
+        <Text tone="secondary" size="small">
+          {item.preview}
         </Text>
-      </Row>
+      </Stack>
     </div>
   );
 }
 
-function FeedSection({
-  title,
-  count,
-  hint,
-  items,
-}: {
-  title: string;
-  count: number;
-  hint: string;
-  items: FeedItem[];
-}) {
+function ScheduleBlock() {
+  const theme = useHostTheme();
+  const rows = [
+    ...CALENDAR_TODAY.map((e) => ({ ...e, day: "TODAY" })),
+    ...CALENDAR_TOMORROW.map((e) => ({ ...e, day: "TOMORROW" })),
+  ];
   return (
-    <Stack gap={4}>
-      <Row align="center" justify="space-between" wrap>
-        <Row gap={8} align="center">
-          <Text weight="semibold">{title}</Text>
-          <Pill size="sm">{String(count)}</Pill>
+    <Table
+      framed
+      headers={["When", "Slot", "Event", "State"]}
+      columnAlign={["left", "left", "left", "right"]}
+      rows={rows.map((e) => [
+        <Code>{e.day}</Code>,
+        e.time,
+        e.title,
+        <Text
+          size="small"
+          style={{
+            color: e.status === "done" ? theme.diff.stripAdded : theme.text.secondary,
+          }}
+        >
+          {e.status === "done" ? "DONE" : "NEXT"}
+        </Text>,
+      ])}
+    />
+  );
+}
+
+function ProjectGrid() {
+  const theme = useHostTheme();
+  return (
+    <Grid columns={2} gap={10}>
+      {PROJECTS.map((p) => (
+        <div
+          style={{
+            background: theme.bg.elevated,
+            border: `1px solid ${theme.stroke.tertiary}`,
+            borderRadius: 6,
+            padding: 12,
+          }}
+        >
+          <Row gap={8} align="center">
+            <Swatch color={p.color} />
+            <Text weight="semibold">{p.name}</Text>
+          </Row>
+          <Spacer size={8} />
+          <UsageBar
+            total={100}
+            topRightLabel={`${p.load}%`}
+            segments={[
+              { id: `${p.name}-load`, value: p.load, color: p.color },
+              { id: `${p.name}-rest`, value: 100 - p.load, color: "gray" },
+            ]}
+          />
+          <Spacer size={6} />
+          <Text tone="tertiary" size="small">
+            {p.note}
+          </Text>
+        </div>
+      ))}
+    </Grid>
+  );
+}
+
+function BriefView() {
+  return (
+    <Grid columns="1.1fr 0.9fr" gap={16}>
+      <Stack gap={14}>
+        <H2>Priorities</H2>
+        <PriorityStack />
+        <H2>Tasks</H2>
+        <TaskCards />
+      </Stack>
+      <Stack gap={14}>
+        <H2>Schedule</H2>
+        <ScheduleBlock />
+        <Callout tone="info" title="Demo mode">
+          Connect MCPs and ask Agent to refresh. This template ships fictional data only.
+        </Callout>
+      </Stack>
+    </Grid>
+  );
+}
+
+function InboxView() {
+  return (
+    <Grid columns={2} gap={16}>
+      <Stack gap={6}>
+        <Row align="center" justify="space-between">
+          <H3>Slack threads</H3>
+          <Pill size="sm">{String(SLACK_THREADS.length)}</Pill>
         </Row>
         <Text tone="tertiary" size="small">
-          {hint}
+          Thread starts · click opens Slack
         </Text>
-      </Row>
-      <Stack gap={0}>
-        {items.map((item) => (
-          <FeedRow item={item} />
-        ))}
+        <Stack gap={0}>
+          {SLACK_THREADS.map((item) => (
+            <FeedRow item={item} />
+          ))}
+        </Stack>
       </Stack>
+      <Stack gap={6}>
+        <Row align="center" justify="space-between">
+          <H3>Email</H3>
+          <Pill size="sm">{String(EMAILS.length)}</Pill>
+        </Row>
+        <Text tone="tertiary" size="small">
+          Work inbox · click opens Gmail
+        </Text>
+        <Stack gap={0}>
+          {EMAILS.map((item) => (
+            <FeedRow item={item} />
+          ))}
+        </Stack>
+      </Stack>
+    </Grid>
+  );
+}
+
+function OpsView() {
+  return (
+    <Stack gap={14}>
+      <H2>Project matrix</H2>
+      <ProjectGrid />
+      <Divider />
+      <H2>Link health</H2>
+      <SourceRail />
+      <Text tone="quaternary" size="small">
+        github.com/aliyansami/cursor-work-dashboard · MIT · No secrets in repo
+      </Text>
     </Stack>
   );
 }
 
-function CalendarSection() {
-  return (
-    <CollapsibleSection
-      title="Schedule"
-      trailing={
-        <Text size="small" tone="tertiary">
-          Google Calendar
-        </Text>
-      }
-      defaultOpen
-    >
-      <Stack gap={12}>
-        <Text weight="semibold" size="small">
-          Today
-        </Text>
-        <Table
-          framed
-          headers={["Time", "Event", "Organizer", "Status"]}
-          rows={CALENDAR_TODAY.map((e) => [e.time, e.title, e.organizer, e.status])}
-        />
-        <Text weight="semibold" size="small">
-          Tomorrow
-        </Text>
-        <Table
-          framed
-          headers={["Time", "Event", "Organizer"]}
-          rows={CALENDAR_TOMORROW.map((e) => [e.time, e.title, e.organizer])}
-        />
-      </Stack>
-    </CollapsibleSection>
-  );
-}
-
-function ProjectOverview() {
-  return (
-    <CollapsibleSection title="Project overview" count={PROJECTS.length} defaultOpen>
-      <Grid columns={2} gap={12}>
-        {PROJECTS.map((p) => (
-          <Card>
-            <CardHeader
-              trailing={
-                <Row gap={6}>
-                  {p.high > 0 && <Pill size="sm">{`${p.high} HIGH`}</Pill>}
-                  <Pill size="sm">{`${p.tasks} tasks`}</Pill>
-                </Row>
-              }
-            >
-              {p.name}
-            </CardHeader>
-            <CardBody>
-              <Text tone="secondary" size="small">
-                {p.update}
-              </Text>
-            </CardBody>
-          </Card>
-        ))}
-      </Grid>
-    </CollapsibleSection>
-  );
-}
-
-function PrioritiesPanel() {
-  const theme = useHostTheme();
-  return (
-    <Card>
-      <CardHeader>Today&apos;s priorities</CardHeader>
-      <CardBody>
-        <Stack gap={8}>
-          {PRIORITIES.map((p, i) => (
-            <Row gap={12} align="start">
-              <Text
-                weight="bold"
-                style={{
-                  color: theme.accent.primary,
-                  fontFamily: "var(--vscode-editor-font-family, monospace)",
-                  minWidth: 20,
-                }}
-              >
-                {`${i + 1}.`}
-              </Text>
-              <Text>{p}</Text>
-            </Row>
-          ))}
-        </Stack>
-      </CardBody>
-    </Card>
-  );
-}
-
 export default function WorkDashboard() {
+  const [view, setView] = useCanvasState<ViewId>("jarvis-view", "brief");
+
   return (
     <Shell>
-      <HeaderBar />
-      <Stack gap={20}>
-        <MetricsRow />
-        <SourceGrid />
-        <Spacer size={4} />
-
-        <Callout tone="info" title="Public template — demo data">
-          Clone this repo, connect MCPs, then ask Agent to refresh. Do not commit
-          PATs, OAuth secrets, or private messages. See README + docs/SETUP.md.
-        </Callout>
-
-        <H2>High priority</H2>
-        <ItemTable items={HIGH_PRIORITY} />
-
-        <H2>Tasks</H2>
-        <ItemTable items={TASKS} />
+      <MissionHeader view={view} setView={setView} />
+      <Stack gap={16}>
+        <SignalStrip />
+        <SourceRail />
         <Divider />
-
-        <CalendarSection />
-        <Divider />
-
-        <H2>Inbox</H2>
-        <Text tone="tertiary" size="small">
-          Thread starts + emails · click opens Slack / Gmail (demo links for now)
-        </Text>
-        <FeedSection
-          title="Slack threads"
-          count={SLACK_THREADS.length}
-          hint="Click → Slack"
-          items={SLACK_THREADS}
-        />
-        <Spacer size={8} />
-        <FeedSection
-          title="Email"
-          count={EMAILS.length}
-          hint="Click → Gmail"
-          items={EMAILS}
-        />
-        <Divider />
-
-        <CollapsibleSection title="Important FYI" count={FYI.length}>
-          <ItemTable items={FYI} />
-        </CollapsibleSection>
-
-        <ProjectOverview />
-        <PrioritiesPanel />
-
-        <Text tone="quaternary" size="small">
-          github.com/aliyansami/cursor-work-dashboard · MIT · No secrets in repo
-        </Text>
+        {view === "brief" && <BriefView />}
+        {view === "inbox" && <InboxView />}
+        {view === "ops" && <OpsView />}
       </Stack>
     </Shell>
   );
