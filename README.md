@@ -1,23 +1,24 @@
 # Cursor Work Dashboard
 
-A **Developer Work Assistant** template for [Cursor](https://cursor.com): turn Slack, Gmail, Calendar, and GitHub into a concise daily dashboard — priorities, tasks, schedule, Slack thread starts, and email — without dumping every message into a task list.
+A **Developer Work Assistant** for [Cursor](https://cursor.com): turn Slack, Gmail, Calendar, and GitHub into a concise daily **ops console** — priorities, tasks, schedule, Slack thread starts, and email — without dumping every message into a task list.
 
 This repo is meant to be **cloned and customized**. It ships **demo data only**. No API keys, tokens, or personal accounts are included.
 
-![Status](https://img.shields.io/badge/Cursor-Canvas%20%2B%20Agent-blue)
+![Status](https://img.shields.io/badge/Vite%20%2B%20React%20%2B%20yarn-ops%20console-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## What you get
 
 | Piece | Purpose |
 |-------|---------|
-| `canvases/work-dashboard.canvas.tsx` | **Ops-console** Canvas — Brief / Inbox / Wrap / Actions / Ops · theme presets · MCP setup checklist |
+| `web/` | **Primary UI** — Vite + React ops console (Brief / Inbox / Wrap / Actions / Ops) |
+| `web/public/data/dashboard.json` | Live snapshot Agent rewrites on refresh (small, fast) |
 | `docs/WORK-ASSISTANT.md` | Agent operating rules (filter → prioritize → organize) |
 | `docs/JARVIS-RULE.md` | Optional “Hey Jarvis…” voice/command phrases |
 | `docs/AUTOMATION.md` | Morning refresh hook, 09:00 Automation, `/loop`, EOD wrap |
 | `docs/SETUP.md` | Connect Slack / Gmail / Calendar / GitHub MCP |
-| `.cursor/hooks.json` | Local morning-window `sessionStart` nudge |
 | `AGENTS.md` | Short agent entrypoint for this project |
+| `canvases/work-dashboard.canvas.tsx` | Thin pointer to the React app (not the live board) |
 
 ### UI views
 
@@ -25,8 +26,8 @@ This repo is meant to be **cloned and customized**. It ships **demo data only**.
 - **Inbox** — Slack thread starts + email (clickable links)
 - **Wrap** — end-of-day: closed · still waiting · tomorrow top 3
 - **Actions** — compose Slack/Gmail drafts (Agent creates drafts only — never auto-send)
-- **Ops** — MCP setup checklist (live/offline per source) + project matrix + link health + automation pointer
-- **Theme presets** — **Ops console** (monospace command deck) vs **Morning brief** (lighter sans surfaces); toggle in header or Ops tab
+- **Ops** — MCP setup checklist + project matrix + link health
+- **Clear Done** — checkmark clears handled items (localStorage; survives JSON refreshes with stable ids)
 
 ## Quick start
 
@@ -36,42 +37,34 @@ This repo is meant to be **cloned and customized**. It ships **demo data only**.
    cd cursor-work-dashboard
    ```
 
-2. **Open in Cursor**  
-   File → Open Folder → this repo.
+2. **Run the ops console**
+   ```bash
+   cd web
+   yarn
+   yarn dev
+   ```
+   Open [http://localhost:5173](http://localhost:5173).
 
-3. **Connect MCP integrations** (Settings → Tools & MCP / Marketplace):
+3. **Open this repo in Cursor** and connect MCP integrations (Settings → Tools & MCP):
    - Slack (OAuth)
-   - Gmail (Google OAuth — use your work Google account)
+   - Gmail (work Google account)
    - Google Calendar
-   - GitHub (Personal Access Token — paste **raw** token only, never commit it)
+   - GitHub (raw PAT — never commit it)
 
    Details: [docs/SETUP.md](docs/SETUP.md)
 
-4. **Install the Canvas**  
-   Cursor only auto-detects canvases under:
-   ```text
-   ~/.cursor/projects/<your-workspace-id>/canvases/
-   ```
-   Copy the template:
-   ```bash
-   mkdir -p ~/.cursor/projects/cursor-work-dashboard/canvases
-   cp canvases/work-dashboard.canvas.tsx \
-     ~/.cursor/projects/cursor-work-dashboard/canvases/
-   ```
-   Or ask Agent: *“Copy the work dashboard canvas into my canvases folder and refresh it from my Slack and Gmail.”*
-
-5. **Ask Agent**
+4. **Ask Agent**
    - `What do I need to do today?`
-   - `Hey Jarvis, what's the update for today?` (after adding the Jarvis rule)
-   - `Refresh inbox`
+   - `Hey Jarvis, refresh`
+   - `Hey Jarvis, wrap`
 
-The agent pulls live data from your MCPs, filters noise, updates the canvas, and keeps links clickable (Slack permalinks → Slack, Gmail → Gmail).
+The agent pulls live data from your MCPs, filters noise, writes **`web/public/data/dashboard.json`**, and gives a short chat brief. Click **Reload** in the app header (or refresh the browser) to pick up the new snapshot.
 
 ## Security (read this)
 
 - **Never** commit `.env`, MCP configs with tokens, PATs, or OAuth secrets.
 - GitHub PAT stays in Cursor MCP settings only.
-- This template uses **fake demo rows**. Replace them by asking Agent to refresh — do not paste secrets into the canvas file.
+- Demo JSON is fictional. Agent refresh replaces it — do not paste secrets into `dashboard.json`.
 - Before opening a PR, scan diffs for emails, tokens (`ghp_`, `github_pat_`), Slack tokens, and private message content.
 
 ## How it works
@@ -79,16 +72,18 @@ The agent pulls live data from your MCPs, filters noise, updates the canvas, and
 ```text
 Slack / Gmail / Calendar / GitHub  →  Cursor Agent (filter + prioritize)
                                       ↓
-                               Canvas dashboard (snapshot UI)
+                         web/public/data/dashboard.json
+                                      ↓
+                         yarn Vite React app (localhost:5173)
                                       ↓
                          Click row → open Slack / Gmail / GitHub
 ```
 
-The Canvas is a **snapshot**, not a live websocket. Refresh by asking Agent (or optional Cursor Automations on Slack events — see SETUP).
+The UI is a **snapshot**, not a live websocket. Refresh by asking Agent (or optional Automations — see [docs/AUTOMATION.md](docs/AUTOMATION.md)).
 
 ## Voice (“Hey Jarvis”)
 
-Cursor has **push-to-talk** (mic / Ctrl+M), not an always-on wake word. Add [docs/JARVIS-RULE.md](docs/JARVIS-RULE.md) as a personal Cursor rule so phrases like “Hey Jarvis, what’s the update for today?” trigger the daily briefing.
+Cursor has **push-to-talk** (mic / Ctrl+M), not an always-on wake word. Add [docs/JARVIS-RULE.md](docs/JARVIS-RULE.md) as a personal Cursor rule. Prefer Jarvis PTT auto-submit (`scripts/install-jarvis-ptt.sh`) so you do not need Enter after STT.
 
 ## Contributing
 
