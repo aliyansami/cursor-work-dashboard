@@ -31,6 +31,7 @@ import {
   UsageBar,
   useCanvasState,
   useHostTheme,
+  IconButton,
 } from "cursor/canvas";
 
 const GENERATED_AT = "Demo snapshot · replace via Agent refresh";
@@ -93,11 +94,40 @@ type WrapItem = {
 };
 
 type PriorityItem = {
+  id: string;
   n: string;
   text: string;
   scope: ScopeId;
   href?: string;
 };
+
+type ClearedBoardApi = {
+  clearedIds: string[];
+  showCleared: boolean;
+  setShowCleared: (v: boolean) => void;
+  isCleared: (id: string) => boolean;
+  clear: (id: string) => void;
+  restore: (id: string) => void;
+  restoreAll: () => void;
+  visible: <T extends { id: string }>(items: T[]) => T[];
+};
+
+/** Shared via useCanvasState keys — Clear Done persists across Agent refreshes of this canvas. */
+function useClearedBoard(): ClearedBoardApi {
+  const [clearedIds, setClearedIds] = useCanvasState<string[]>("cleared-ids", []);
+  const [showCleared, setShowCleared] = useCanvasState<boolean>("show-cleared", false);
+  return {
+    clearedIds,
+    showCleared,
+    setShowCleared,
+    isCleared: (id) => clearedIds.includes(id),
+    clear: (id) => setClearedIds((prev) => (prev.includes(id) ? prev : [...prev, id])),
+    restore: (id) => setClearedIds((prev) => prev.filter((x) => x !== id)),
+    restoreAll: () => setClearedIds([]),
+    visible: (items) =>
+      showCleared ? items : items.filter((i) => !clearedIds.includes(i.id)),
+  };
+}
 
 type CalItem = {
   time: string;
@@ -238,16 +268,19 @@ const CALENDAR_TOMORROW: CalItem[] = [
 
 const PRIORITIES: PriorityItem[] = [
   {
+    id: "pri-mcp",
     n: "01",
     text: "Connect Slack, Gmail, Calendar, GitHub MCP",
     scope: "general",
   },
   {
+    id: "pri-refresh",
     n: "02",
     text: "Ask Agent to refresh this dashboard",
     scope: "general",
   },
   {
+    id: "pri-jarvis",
     n: "03",
     text: "Optional: add Jarvis rule from docs/JARVIS-RULE.md",
     scope: "general",
@@ -373,14 +406,25 @@ const STILL_WAITING: WrapItem[] = [
 ];
 
 const TOMORROW_TOP3: PriorityItem[] = [
-  { n: "01", text: "Client sync at 14:00 — prep notes", scope: "client-a" },
   {
+    id: "tmr-client",
+    n: "01",
+    text: "Client sync at 14:00 — prep notes",
+    scope: "client-a",
+  },
+  {
+    id: "tmr-pr42",
     n: "02",
     text: "Nudge PR #42 if still unreviewed",
     scope: "frontend",
     href: "https://github.com",
   },
-  { n: "03", text: "Skim overnight Slack + security FYIs", scope: "general" },
+  {
+    id: "tmr-slack",
+    n: "03",
+    text: "Skim overnight Slack + security FYIs",
+    scope: "general",
+  },
 ];
 
 const DRAFT_TARGETS: DraftTarget[] = [
@@ -440,8 +484,10 @@ function scopeMeta(id: ScopeId): Scope {
   return SCOPES.find((s) => s.id === id) ?? SCOPES[0]!;
 }
 
-function actionCount(scope: ScopeId): number {
-  return inScope(TASKS, scope).length + inScope(DRAFT_TARGETS, scope).length;
+function actionCount(scope: ScopeId, clearedIds: string[] = []): number {
+  const open = (items: { id: string; scope: ScopeId }[]) =>
+    inScope(items, scope).filter((i) => !clearedIds.includes(i.id)).length;
+  return open(TASKS) + open(DRAFT_TARGETS);
 }
 
 function shellStyle(theme: ReturnType<typeof useHostTheme>) {
@@ -633,6 +679,7 @@ function ChannelSwitcher({
   setScope: (s: ScopeId) => void;
 }) {
   const theme = useHostTheme();
+  const { clearedIds } = useClearedBoard();
   return (
     <div
       style={{
@@ -658,7 +705,7 @@ function ChannelSwitcher({
         placeholder="All projects"
         style={{ width: "100%", maxWidth: 420 }}
         options={SCOPES.map((s) => {
-          const actions = actionCount(s.id);
+          const actions = actionCount(s.id, clearedIds);
           const base = s.slack ? `${s.short} · ${s.slack}` : s.short;
           return {
             value: s.id,
@@ -681,9 +728,9 @@ function ChannelSwitcher({
                 No dedicated Slack channel · email / calendar / GitHub
               </Text>
             )}
-            {actionCount(scope) > 0 ? (
+            {actionCount(scope, clearedIds) > 0 ? (
               <Pill size="sm" active>
-                {actionCount(scope)} ACTIONS
+                {actionCount(scope, clearedIds)} ACTIONS
               </Pill>
             ) : (
               <Pill size="sm">NO ACTIONS</Pill>
@@ -697,11 +744,20 @@ function ChannelSwitcher({
 
 function SignalStrip({ scope }: { scope: ScopeId }) {
   const theme = useHostTheme();
+  const { clearedIds, visible } = useClearedBoard();
   const live = SOURCES.filter((s) => s.status === "live").length;
-  const tasks = inScope(TASKS, scope).length;
-  const waiting = inScope(STILL_WAITING, scope).length;
-  const closed = inScope(CLOSED_TODAY, scope).length;
-  const drafts = inScope(DRAFT_TARGETS, scope).length;
+  const tasks = visible(inScope(TASKS, scope)).length;
+  const waiting = visible(inScope(STILL_WAITING, scope)).length;
+  const clearedInScope = [
+    ...inScope(TASKS, scope),
+    ...inScope(SLACK_THREADS, scope),
+    ...inScope(EMAILS, scope),
+    ...inScope(STILL_WAITING, scope),
+    ...inScope(PRIORITIES, scope),
+    ...inScope(DRAFT_TARGETS, scope),
+  ].filter((i) => clearedIds.includes(i.id)).length;
+  const closed = inScope(CLOSED_TODAY, scope).length + clearedInScope;
+  const drafts = visible(inScope(DRAFT_TARGETS, scope)).length;
   return (
     <Stack gap={10}>
       <Grid columns={4} gap={10}>
@@ -736,6 +792,64 @@ function SignalStrip({ scope }: { scope: ScopeId }) {
   );
 }
 
+function ClearedBar() {
+  const { clearedIds, showCleared, setShowCleared, restoreAll } = useClearedBoard();
+  if (clearedIds.length === 0) return null;
+  return (
+    <Row align="center" justify="space-between" wrap gap={8}>
+      <Text size="small" tone="tertiary">
+        {clearedIds.length} cleared · off the board until restore
+      </Text>
+      <Row gap={6} wrap>
+        <Button variant="ghost" onClick={() => setShowCleared(!showCleared)}>
+          {showCleared ? "Hide cleared" : "Show cleared"}
+        </Button>
+        <Button variant="ghost" onClick={() => restoreAll()}>
+          Restore all
+        </Button>
+      </Row>
+    </Row>
+  );
+}
+
+function ClearToggle({ id }: { id: string }) {
+  const theme = useHostTheme();
+  const { isCleared, clear, restore } = useClearedBoard();
+  const done = isCleared(id);
+  return (
+    <IconButton
+      title={done ? "Restore to board" : "Mark done · clear from board"}
+      size="sm"
+      variant="default"
+      onClick={() => (done ? restore(id) : clear(id))}
+      style={{
+        color: done ? theme.diff.stripAdded : theme.text.quaternary,
+        flexShrink: 0,
+      }}
+    >
+      <svg width={14} height={14} viewBox="0 0 14 14" fill="none" aria-hidden>
+        <circle
+          cx="7"
+          cy="7"
+          r="5.25"
+          stroke="currentColor"
+          strokeWidth={1.25}
+          fill={done ? "currentColor" : "none"}
+          opacity={done ? 0.22 : 1}
+        />
+        <path
+          d="M4.2 7.1l1.85 1.85L9.9 5.1"
+          stroke={done ? theme.diff.stripAdded : "currentColor"}
+          strokeWidth={1.35}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+      </svg>
+    </IconButton>
+  );
+}
+
 function SourceRail() {
   const theme = useHostTheme();
   return (
@@ -767,64 +881,98 @@ function SourceRail() {
 
 function PriorityStack({ items }: { items: PriorityItem[] }) {
   const theme = useHostTheme();
+  const { isCleared } = useClearedBoard();
   if (items.length === 0) return null;
   return (
     <Stack gap={0}>
-      {items.map((p, i) => (
-        <div style={{ borderBottom: `1px solid ${theme.stroke.tertiary}`, padding: "12px 0" }}>
-          <Row gap={12} align="start">
-            <Text
-              weight="bold"
-              style={{
-                color: theme.accent.primary,
-                fontVariantNumeric: "tabular-nums",
-                minWidth: 28,
-              }}
-            >
-              {String(i + 1).padStart(2, "0")}
-            </Text>
-            {p.href ? <Link href={p.href}>{p.text}</Link> : <Text weight="medium">{p.text}</Text>}
-          </Row>
-        </div>
-      ))}
+      {items.map((p, i) => {
+        const done = isCleared(p.id);
+        return (
+          <div
+            style={{
+              borderBottom: `1px solid ${theme.stroke.tertiary}`,
+              padding: "12px 0",
+              opacity: done ? 0.45 : 1,
+            }}
+          >
+            <Row gap={12} align="start" justify="space-between">
+              <Row gap={12} align="start" style={{ flex: 1, minWidth: 0 }}>
+                <Text
+                  weight="bold"
+                  style={{
+                    color: theme.accent.primary,
+                    fontVariantNumeric: "tabular-nums",
+                    minWidth: 28,
+                  }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </Text>
+                {p.href ? (
+                  <Link href={p.href}>{p.text}</Link>
+                ) : (
+                  <Text weight="medium">{p.text}</Text>
+                )}
+              </Row>
+              <ClearToggle id={p.id} />
+            </Row>
+          </div>
+        );
+      })}
     </Stack>
   );
 }
 
 function TaskCards({ items }: { items: WorkItem[] }) {
   const theme = useHostTheme();
+  const { isCleared } = useClearedBoard();
   if (items.length === 0) return null;
   return (
     <Stack gap={8}>
-      {items.map((t) => (
-        <div
-          style={{
-            border: `1px solid ${theme.stroke.secondary}`,
-            borderLeft: `3px solid ${theme.accent.primary}`,
-            borderRadius: 6,
-            padding: "10px 12px",
-            background: theme.bg.elevated,
-          }}
-        >
-          <Row align="center" justify="space-between" gap={8} wrap>
-            <Pill size="sm">{t.priority.toUpperCase()}</Pill>
-            <Text tone="tertiary" size="small">
-              {t.project}
+      {items.map((t) => {
+        const done = isCleared(t.id);
+        return (
+          <div
+            style={{
+              border: `1px solid ${theme.stroke.secondary}`,
+              borderLeft: `3px solid ${done ? theme.diff.stripAdded : theme.accent.primary}`,
+              borderRadius: 6,
+              padding: "10px 12px",
+              background: theme.bg.elevated,
+              opacity: done ? 0.5 : 1,
+            }}
+          >
+            <Row align="center" justify="space-between" gap={8} wrap>
+              <Row gap={6} align="center" wrap>
+                <Pill size="sm">{t.priority.toUpperCase()}</Pill>
+                {done && (
+                  <Pill size="sm" active>
+                    CLEARED
+                  </Pill>
+                )}
+              </Row>
+              <Row gap={8} align="center">
+                <Text tone="tertiary" size="small">
+                  {t.project}
+                </Text>
+                <ClearToggle id={t.id} />
+              </Row>
+            </Row>
+            <Spacer size={6} />
+            {t.href ? <Link href={t.href}>{t.title}</Link> : <Text weight="semibold">{t.title}</Text>}
+            <Text tone="secondary" size="small">
+              {t.detail} · {t.source}
             </Text>
-          </Row>
-          <Spacer size={6} />
-          {t.href ? <Link href={t.href}>{t.title}</Link> : <Text weight="semibold">{t.title}</Text>}
-          <Text tone="secondary" size="small">
-            {t.detail} · {t.source}
-          </Text>
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </Stack>
   );
 }
 
 function FeedRow({ item }: { item: FeedItem }) {
   const theme = useHostTheme();
+  const { isCleared } = useClearedBoard();
+  const done = isCleared(item.id);
   return (
     <div
       style={{
@@ -832,28 +980,42 @@ function FeedRow({ item }: { item: FeedItem }) {
         gap: 10,
         padding: "10px 0",
         borderBottom: `1px solid ${theme.stroke.tertiary}`,
+        opacity: done ? 0.45 : 1,
       }}
     >
       <div
         style={{
           width: 3,
           borderRadius: 2,
-          background: item.unread ? theme.accent.primary : theme.stroke.secondary,
+          background: done
+            ? theme.diff.stripAdded
+            : item.unread
+              ? theme.accent.primary
+              : theme.stroke.secondary,
           flexShrink: 0,
           alignSelf: "stretch",
         }}
       />
       <Stack gap={3} style={{ flex: 1, minWidth: 0 }}>
-        <Row gap={6} align="center" wrap>
-          {item.unread && (
-            <Pill size="sm" active>
-              NEW
-            </Pill>
-          )}
-          {item.tag && <Pill size="sm">{item.tag}</Pill>}
-          <Text tone="quaternary" size="small">
-            {item.meta}
-          </Text>
+        <Row gap={6} align="center" justify="space-between" wrap>
+          <Row gap={6} align="center" wrap>
+            {done ? (
+              <Pill size="sm" active>
+                CLEARED
+              </Pill>
+            ) : (
+              item.unread && (
+                <Pill size="sm" active>
+                  NEW
+                </Pill>
+              )
+            )}
+            {item.tag && <Pill size="sm">{item.tag}</Pill>}
+            <Text tone="quaternary" size="small">
+              {item.meta}
+            </Text>
+          </Row>
+          <ClearToggle id={item.id} />
         </Row>
         <Link href={item.href}>{item.title}</Link>
         <Text tone="secondary" size="small">
@@ -874,6 +1036,7 @@ function WrapList({
   items: WrapItem[];
 }) {
   const theme = useHostTheme();
+  const { isCleared } = useClearedBoard();
   if (items.length === 0) return null;
   const rail = tone === "closed" ? theme.diff.stripAdded : theme.accent.primary;
   return (
@@ -883,36 +1046,43 @@ function WrapList({
         <Pill size="sm">{String(items.length)}</Pill>
       </Row>
       <Stack gap={0}>
-        {items.map((item) => (
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              padding: "10px 0",
-              borderBottom: `1px solid ${theme.stroke.tertiary}`,
-            }}
-          >
+        {items.map((item) => {
+          const done = isCleared(item.id);
+          return (
             <div
               style={{
-                width: 3,
-                borderRadius: 2,
-                background: rail,
-                flexShrink: 0,
-                alignSelf: "stretch",
+                display: "flex",
+                gap: 10,
+                padding: "10px 0",
+                borderBottom: `1px solid ${theme.stroke.tertiary}`,
+                opacity: done ? 0.45 : 1,
               }}
-            />
-            <Stack gap={2} style={{ flex: 1 }}>
-              {item.href ? (
-                <Link href={item.href}>{item.title}</Link>
-              ) : (
-                <Text weight="medium">{item.title}</Text>
-              )}
-              <Text tone="secondary" size="small">
-                {item.detail}
-              </Text>
-            </Stack>
-          </div>
-        ))}
+            >
+              <div
+                style={{
+                  width: 3,
+                  borderRadius: 2,
+                  background: done ? theme.diff.stripAdded : rail,
+                  flexShrink: 0,
+                  alignSelf: "stretch",
+                }}
+              />
+              <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                <Row align="center" justify="space-between" gap={8} wrap>
+                  {item.href ? (
+                    <Link href={item.href}>{item.title}</Link>
+                  ) : (
+                    <Text weight="medium">{item.title}</Text>
+                  )}
+                  {tone === "waiting" && <ClearToggle id={item.id} />}
+                </Row>
+                <Text tone="secondary" size="small">
+                  {item.detail}
+                </Text>
+              </Stack>
+            </div>
+          );
+        })}
       </Stack>
     </Stack>
   );
@@ -1000,54 +1170,60 @@ function EmptyScope({ scope, label }: { scope: ScopeId; label: string }) {
 }
 
 function BriefView({ scope }: { scope: ScopeId }) {
-  const priorities = inScope(PRIORITIES, scope);
-  const tasks = inScope(TASKS, scope);
+  const { visible } = useClearedBoard();
+  const priorities = visible(inScope(PRIORITIES, scope));
+  const tasks = visible(inScope(TASKS, scope));
   const today = inScope(CALENDAR_TODAY, scope);
   const tomorrow = inScope(CALENDAR_TOMORROW, scope);
   const empty = priorities.length === 0 && tasks.length === 0 && today.length === 0 && tomorrow.length === 0;
 
   return (
-    <Grid columns="1.1fr 0.9fr" gap={16}>
-      <Stack gap={14}>
-        {priorities.length > 0 && (
-          <>
-            <H2>Priorities</H2>
-            <PriorityStack items={priorities} />
-          </>
-        )}
-        {tasks.length > 0 && (
-          <>
-            <H2>Tasks</H2>
-            <TaskCards items={tasks} />
-          </>
-        )}
-        {empty && <EmptyScope scope={scope} label="brief" />}
-      </Stack>
-      <Stack gap={14}>
-        {(today.length > 0 || tomorrow.length > 0) && (
-          <>
-            <H2>Schedule</H2>
-            <ScheduleBlock today={today} tomorrow={tomorrow} />
-          </>
-        )}
-        {scope === "all" && (
-          <Callout tone="info" title="Demo mode">
-            Connect MCPs and ask Agent to refresh. This template ships fictional data only — use the
-            channel switcher to focus a project.
-          </Callout>
-        )}
-      </Stack>
-    </Grid>
+    <Stack gap={12}>
+      <ClearedBar />
+      <Grid columns="1.1fr 0.9fr" gap={16}>
+        <Stack gap={14}>
+          {priorities.length > 0 && (
+            <>
+              <H2>Priorities</H2>
+              <PriorityStack items={priorities} />
+            </>
+          )}
+          {tasks.length > 0 && (
+            <>
+              <H2>Tasks</H2>
+              <TaskCards items={tasks} />
+            </>
+          )}
+          {empty && <EmptyScope scope={scope} label="brief" />}
+        </Stack>
+        <Stack gap={14}>
+          {(today.length > 0 || tomorrow.length > 0) && (
+            <>
+              <H2>Schedule</H2>
+              <ScheduleBlock today={today} tomorrow={tomorrow} />
+            </>
+          )}
+          {scope === "all" && (
+            <Callout tone="info" title="Demo mode">
+              Hit the checkmark to clear handled items. Connect MCPs and ask Agent to refresh — keep
+              stable ids so clears survive.
+            </Callout>
+          )}
+        </Stack>
+      </Grid>
+    </Stack>
   );
 }
 
 function InboxView({ scope }: { scope: ScopeId }) {
-  const slack = inScope(SLACK_THREADS, scope);
-  const emails = inScope(EMAILS, scope);
+  const { visible } = useClearedBoard();
+  const slack = visible(inScope(SLACK_THREADS, scope));
+  const emails = visible(inScope(EMAILS, scope));
   const empty = slack.length === 0 && emails.length === 0;
 
   return (
     <Stack gap={16}>
+      <ClearedBar />
       {empty && <EmptyScope scope={scope} label="inbox" />}
       <Grid columns={2} gap={16}>
         {slack.length > 0 && (
@@ -1057,7 +1233,7 @@ function InboxView({ scope }: { scope: ScopeId }) {
               <Pill size="sm">{String(slack.length)}</Pill>
             </Row>
             <Text tone="tertiary" size="small">
-              Thread starts · click opens Slack
+              Thread starts · Clear after you cater · click opens Slack
             </Text>
             <Stack gap={0}>
               {slack.map((item) => (
@@ -1073,7 +1249,7 @@ function InboxView({ scope }: { scope: ScopeId }) {
               <Pill size="sm">{String(emails.length)}</Pill>
             </Row>
             <Text tone="tertiary" size="small">
-              Work inbox · click opens Gmail
+              Work inbox · Clear after handled · click opens Gmail
             </Text>
             <Stack gap={0}>
               {emails.map((item) => (
@@ -1088,18 +1264,20 @@ function InboxView({ scope }: { scope: ScopeId }) {
 }
 
 function WrapView({ scope }: { scope: ScopeId }) {
+  const { visible } = useClearedBoard();
   const closed = inScope(CLOSED_TODAY, scope);
-  const waiting = inScope(STILL_WAITING, scope);
-  const tomorrow = inScope(TOMORROW_TOP3, scope);
+  const waiting = visible(inScope(STILL_WAITING, scope));
+  const tomorrow = visible(inScope(TOMORROW_TOP3, scope));
   const cal = inScope(CALENDAR_TOMORROW, scope);
   const empty = closed.length === 0 && waiting.length === 0 && tomorrow.length === 0;
 
   return (
     <Stack gap={16}>
+      <ClearedBar />
       <Callout tone="info" title="End-of-day wrap">
-        Filtered by channel/project switcher. Say &quot;Hey Jarvis, wrap&quot; to rebuild Closed /
-        Waiting / Tomorrow top 3 from live sources. Never invent completions — only mark closed when
-        CONFIRMED.
+        Filtered by channel/project switcher. Clear waiting items you already chased. Say &quot;Hey
+        Jarvis, wrap&quot; to rebuild Closed / Waiting / Tomorrow top 3 from live sources. Never invent
+        completions — only mark closed when CONFIRMED.
       </Callout>
       {empty && <EmptyScope scope={scope} label="wrap" />}
       <Grid columns={2} gap={16}>
@@ -1179,8 +1357,9 @@ function ReplyContextCard({ target }: { target: DraftTarget }) {
 
 function ActionsView({ scope }: { scope: ScopeId }) {
   const theme = useHostTheme();
-  const drafts = inScope(DRAFT_TARGETS, scope);
-  const relatedTasks = inScope(TASKS, scope);
+  const { visible, clear } = useClearedBoard();
+  const drafts = visible(inScope(DRAFT_TARGETS, scope));
+  const relatedTasks = visible(inScope(TASKS, scope));
   const defaultId = drafts[0]?.id ?? "";
   const [targetId, setTargetId] = useCanvasState<string>("draft-target", defaultId);
   const activeId = drafts.some((d) => d.id === targetId) ? targetId : defaultId;
@@ -1193,6 +1372,7 @@ function ActionsView({ scope }: { scope: ScopeId }) {
   if (drafts.length === 0) {
     return (
       <Stack gap={14}>
+        <ClearedBar />
         <Callout tone="warning" title="Draft only">
           Canvas stores the text here. Ask Agent to create the Slack/Gmail draft via MCP — never send
           unless you explicitly say send.
@@ -1215,6 +1395,7 @@ function ActionsView({ scope }: { scope: ScopeId }) {
 
   return (
     <Stack gap={14}>
+      <ClearedBar />
       <Callout tone="warning" title="Draft only">
         Canvas stores the text here. Ask Agent to create the Slack/Gmail draft via MCP — never send
         unless you explicitly say send.
@@ -1296,6 +1477,17 @@ function ActionsView({ scope }: { scope: ScopeId }) {
             <Button variant="primary" onClick={() => setStatus("ready")}>
               Mark draft ready
             </Button>
+            {target && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  clear(target.id);
+                  setStatus("idle");
+                }}
+              >
+                Done · clear
+              </Button>
+            )}
           </Row>
           <Text tone="quaternary" size="small">
             Mark ready after Agent creates the MCP draft. Still never auto-sends.
@@ -1308,8 +1500,10 @@ function ActionsView({ scope }: { scope: ScopeId }) {
 
 function OpsView({ scope, setScope }: { scope: ScopeId; setScope: (s: ScopeId) => void }) {
   const projects = inScope(PROJECTS, scope);
+  const { clearedIds } = useClearedBoard();
   return (
     <Stack gap={14}>
+      <ClearedBar />
       <SetupChecklist />
       <Divider />
       <H2>Project matrix</H2>
@@ -1323,7 +1517,7 @@ function OpsView({ scope, setScope }: { scope: ScopeId; setScope: (s: ScopeId) =
             onClick={() => setScope(s.id)}
           >
             {s.short}
-            {actionCount(s.id) > 0 ? ` · ${actionCount(s.id)}` : ""}
+            {actionCount(s.id, clearedIds) > 0 ? ` · ${actionCount(s.id, clearedIds)}` : ""}
           </Button>
         ))}
       </Row>
