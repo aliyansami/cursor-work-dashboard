@@ -17,22 +17,21 @@ Enable Hooks in Cursor Settings → Hooks, then open this project.
 
 Create a **scheduled** Cursor Automation that runs once each weekday morning:
 
-**Name:** Jarvis morning dashboard refresh  
+**Name:** Jarvis morning canvas refresh  
 
 **Trigger:** Schedule · weekdays · 09:00 (your timezone)  
 
-**Tools:** Slack, Gmail, Google Calendar, GitHub (read); write `web/public/data/dashboard.json`  
+**Tools:** Slack, Gmail, Google Calendar, GitHub (read); canvas file write  
 
 **Instructions (paste):**
 
 ```text
 You are Jarvis for the Cursor Work Dashboard template.
 1. Pull Slack, Gmail, Calendar, GitHub. Filter noise per docs/WORK-ASSISTANT.md.
-2. Write web/public/data/dashboard.json with concise Brief / Inbox / Wrap / Actions / Ops fields. Keep stable item ids.
-3. Remind user to run: cd web && yarn dev → http://localhost:5173 (Reload in header).
-4. Reply with a short morning brief + TODAY'S PRIORITIES (top 3).
-5. Never send Slack or email. Draft only if the instructions ask for a draft.
-6. Never invent deadlines — mark CONFIRMED / INFERRED / UNKNOWN.
+2. Refresh canvases/work-dashboard.canvas.tsx (or the user's ~/.cursor/projects/.../canvases/work-dashboard.canvas.tsx if that is the live copy) with concise Brief / Inbox / Wrap / Actions / Ops data.
+3. Reply with a short morning brief + TODAY'S PRIORITIES (top 3).
+4. Never send Slack or email. Draft only if the instructions ask for a draft.
+5. Never invent deadlines — mark CONFIRMED / INFERRED / UNKNOWN.
 ```
 
 Ask Agent: *“Open the Automations editor with a Jarvis 9am morning refresh draft”* to prefill.
@@ -42,7 +41,7 @@ Ask Agent: *“Open the Automations editor with a Jarvis 9am morning refresh dra
 In Agent chat:
 
 ```text
-/loop 1d Hey Jarvis, refresh the work dashboard from Slack, Gmail, Calendar, GitHub. Update web/public/data/dashboard.json. Concise brief only. Do not send messages.
+/loop 1d Hey Jarvis, refresh the work dashboard from Slack, Gmail, Calendar, GitHub. Update the canvas. Concise brief only. Do not send messages.
 ```
 
 Or for a same-day check every few hours: `/loop 3h …`. Stop with “stop the loop”.
@@ -54,13 +53,13 @@ Say: **Hey Jarvis, wrap** / **end of day** / **EOD wrap**
 Agent should:
 
 1. Pull sources again (or reuse last snapshot if under 15 minutes old).
-2. Fill dashboard.json Wrap fields: Closed today · Still waiting · Tomorrow top 3 (+ tomorrow calendar).
+2. Fill **Wrap** tab: Closed today · Still waiting · Tomorrow top 3 (+ tomorrow calendar).
 3. Lead chat with a short wrap verdict.
 
 ## Quick actions (draft only)
 
-In the React **Actions** view (or say “draft a Slack reply to …”):
+On **Actions** tab (or say “draft a Slack reply to …”):
 
-1. Compose text in the app (or Agent drafts it).
+1. Compose text in the canvas (or Agent drafts it).
 2. Agent creates **Gmail draft** or **Slack draft** via MCP — **never send** unless the user explicitly says send.
 3. Mark Actions status DRAFT READY after the MCP draft exists.
