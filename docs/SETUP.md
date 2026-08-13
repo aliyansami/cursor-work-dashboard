@@ -26,20 +26,15 @@ Connect these in **Cursor Settings → Tools & MCP** (or Marketplace plugins). T
 
 ## 4. First dashboard refresh
 
-Start the app:
-
-```bash
-cd web && yarn && yarn dev
-```
-
 In Agent chat:
 
 ```text
 Refresh the work dashboard from Slack, Gmail, Calendar, and GitHub.
-Write web/public/data/dashboard.json (replace demo data).
-Keep rows concise. Thread starts only for Slack. Stable item ids.
-Then tell me to Reload at http://localhost:5173.
+Use the template in canvases/work-dashboard.canvas.tsx.
+Replace demo data. Keep the UI concise. Thread starts only for Slack.
 ```
+
+Copy the canvas into Cursor’s canvases folder if it does not appear beside chat (see README).
 
 ## Auto-refresh reality check
 

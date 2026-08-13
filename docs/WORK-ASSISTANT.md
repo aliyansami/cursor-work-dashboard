@@ -54,7 +54,7 @@ When asked for wrap / EOD / “Hey Jarvis, wrap”:
 2. **Still waiting** — blockers / waiting-for with age when known.
 3. **Tomorrow top 3** — actionable priorities for the next workday + tomorrow’s calendar.
 
-Update **`web/public/data/dashboard.json`** (`closedToday` · `stillWaiting` · `tomorrowTop3`). Lead the chat with a short verdict. Ensure `yarn dev` is running so the Wrap tab shows the snapshot.
+Update the canvas **Wrap** tab. Lead the chat with a short verdict.
 
 ## Drafts (quick actions)
 
@@ -62,7 +62,7 @@ When asked to draft Slack or Gmail:
 
 - Create **draft only** via MCP (`create_draft` / Slack draft tools).
 - **Never send** unless the user explicitly says send / post / deliver.
-- Prefer updating `draftTargets` + draft body guidance in chat; user marks ready in the React **Actions** view.
+- Prefer updating the canvas **Actions** tab with the draft body + DRAFT READY.
 
 ## Automation
 
