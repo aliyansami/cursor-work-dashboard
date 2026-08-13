@@ -1,0 +1,342 @@
+{
+  "generatedAt": "Demo snapshot · replace via Agent refresh",
+  "user": "Your Name",
+  "email": "you@example.com",
+  "workspace": "Your Workspace",
+  "scopes": [
+    { "id": "all", "short": "All", "project": "All projects", "color": "gray" },
+    {
+      "id": "backend",
+      "short": "Backend",
+      "slack": "#demo-backend",
+      "project": "Demo Backend",
+      "color": "blue"
+    },
+    {
+      "id": "frontend",
+      "short": "Frontend",
+      "slack": "#demo-frontend",
+      "project": "Demo Frontend",
+      "color": "orange"
+    },
+    {
+      "id": "client-a",
+      "short": "Client A",
+      "slack": "#demo-client-a",
+      "project": "Client A",
+      "color": "green"
+    },
+    {
+      "id": "internal",
+      "short": "Internal",
+      "slack": "#demo-internal",
+      "project": "Internal",
+      "color": "purple"
+    },
+    { "id": "general", "short": "General", "project": "General", "color": "gray" }
+  ],
+  "sources": [
+    {
+      "name": "Slack",
+      "account": "your-workspace",
+      "status": "offline",
+      "note": "Connect MCP",
+      "setup": "Settings → Tools & MCP → Slack → OAuth"
+    },
+    {
+      "name": "Gmail",
+      "account": "you@example.com",
+      "status": "offline",
+      "note": "Connect MCP",
+      "setup": "Settings → Tools & MCP → Gmail → work Google account"
+    },
+    {
+      "name": "Calendar",
+      "account": "you@example.com",
+      "status": "offline",
+      "note": "Connect MCP",
+      "setup": "Settings → Tools & MCP → Google Calendar"
+    },
+    {
+      "name": "GitHub",
+      "account": "your-github",
+      "status": "offline",
+      "note": "Add PAT in settings",
+      "setup": "Settings → Tools & MCP → GitHub → paste raw PAT (never commit)"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "demo-task-1",
+      "title": "Follow up PR #42 — Fix landing logo",
+      "project": "Demo Frontend",
+      "priority": "medium",
+      "source": "GitHub",
+      "status": "Open PR",
+      "detail": "DEMO · replace on refresh",
+      "scope": "frontend",
+      "href": "https://github.com"
+    },
+    {
+      "id": "demo-task-2",
+      "title": "Investigate refresh-token 401s",
+      "project": "Demo Backend",
+      "priority": "high",
+      "source": "Slack",
+      "status": "Action",
+      "detail": "DEMO · sample high-priority task",
+      "scope": "backend",
+      "href": "https://slack.com"
+    },
+    {
+      "id": "demo-task-3",
+      "title": "Prep notes for Client A sync",
+      "project": "Client A",
+      "priority": "medium",
+      "source": "Calendar",
+      "status": "Prep",
+      "detail": "DEMO · tomorrow 14:00",
+      "scope": "client-a"
+    }
+  ],
+  "priorities": [
+    {
+      "id": "pri-mcp",
+      "n": "01",
+      "text": "Connect Slack, Gmail, Calendar, GitHub MCP",
+      "scope": "general"
+    },
+    {
+      "id": "pri-refresh",
+      "n": "02",
+      "text": "Ask Agent to refresh this dashboard",
+      "scope": "general"
+    },
+    {
+      "id": "pri-jarvis",
+      "n": "03",
+      "text": "Optional: add Jarvis rule from docs/JARVIS-RULE.md",
+      "scope": "general"
+    }
+  ],
+  "slackThreads": [
+    {
+      "id": "demo-s1",
+      "title": "#demo-backend",
+      "preview": "Alex: Can someone check the refresh-token 401s?",
+      "meta": "DEMO · thread start",
+      "href": "https://slack.com",
+      "tag": "Backend",
+      "scope": "backend"
+    },
+    {
+      "id": "demo-s2",
+      "title": "#demo-frontend",
+      "preview": "Sam: Logo cropped on mobile — thread started",
+      "meta": "DEMO · thread start",
+      "href": "https://slack.com",
+      "tag": "Frontend",
+      "scope": "frontend"
+    },
+    {
+      "id": "demo-s3",
+      "title": "#demo-client-a",
+      "preview": "Taylor: Can we confirm the sync agenda for tomorrow?",
+      "meta": "DEMO · thread start",
+      "href": "https://slack.com",
+      "tag": "Client A",
+      "scope": "client-a"
+    },
+    {
+      "id": "demo-s4",
+      "title": "#demo-internal",
+      "preview": "Jordan: quick sync for 5min?",
+      "meta": "DEMO · thread start",
+      "href": "https://slack.com",
+      "tag": "Internal",
+      "scope": "internal"
+    }
+  ],
+  "emails": [
+    {
+      "id": "demo-e1",
+      "title": "Invite: collaborate on demo/repo",
+      "preview": "Example actionable email",
+      "meta": "DEMO",
+      "href": "https://mail.google.com",
+      "tag": "Action",
+      "scope": "client-a"
+    },
+    {
+      "id": "demo-e2",
+      "title": "Automated security alert",
+      "preview": "Example FYI — no reply required",
+      "meta": "DEMO · unread",
+      "href": "https://mail.google.com",
+      "tag": "Sec",
+      "unread": true,
+      "scope": "general"
+    },
+    {
+      "id": "demo-e3",
+      "title": "Client A sync invite",
+      "preview": "Example calendar invite email",
+      "meta": "DEMO",
+      "href": "https://mail.google.com",
+      "tag": "Cal",
+      "scope": "client-a"
+    }
+  ],
+  "calendarToday": [
+    {
+      "time": "10:00–10:30",
+      "title": "Team standup",
+      "status": "done",
+      "scope": "internal"
+    }
+  ],
+  "calendarTomorrow": [
+    {
+      "time": "14:00–14:30",
+      "title": "Client sync",
+      "status": "upcoming",
+      "scope": "client-a"
+    },
+    {
+      "time": "11:00–11:30",
+      "title": "Internal planning",
+      "status": "upcoming",
+      "scope": "internal"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Backend",
+      "color": "blue",
+      "load": 45,
+      "note": "Sample project card",
+      "scope": "backend"
+    },
+    {
+      "name": "Frontend",
+      "color": "orange",
+      "load": 30,
+      "note": "Sample open PR",
+      "scope": "frontend"
+    },
+    {
+      "name": "Client A",
+      "color": "green",
+      "load": 15,
+      "note": "Sync tomorrow",
+      "scope": "client-a"
+    },
+    {
+      "name": "Internal",
+      "color": "purple",
+      "load": 10,
+      "note": "Low activity",
+      "scope": "internal"
+    }
+  ],
+  "closedToday": [
+    {
+      "id": "c1",
+      "title": "Standup attended",
+      "detail": "DEMO · calendar marked done",
+      "scope": "internal"
+    },
+    {
+      "id": "c2",
+      "title": "Replied in #demo-frontend logo thread",
+      "detail": "DEMO · sample closed Slack follow-up",
+      "scope": "frontend",
+      "href": "https://slack.com"
+    }
+  ],
+  "stillWaiting": [
+    {
+      "id": "w1",
+      "title": "Auth fix from Alex on refresh-token 401s",
+      "detail": "DEMO · waiting · 1d",
+      "scope": "backend",
+      "href": "https://slack.com"
+    },
+    {
+      "id": "w2",
+      "title": "Reviewer on PR #42",
+      "detail": "DEMO · waiting · GitHub",
+      "scope": "frontend",
+      "href": "https://github.com"
+    },
+    {
+      "id": "w3",
+      "title": "Client A agenda confirmation",
+      "detail": "DEMO · waiting · Slack",
+      "scope": "client-a",
+      "href": "https://slack.com"
+    }
+  ],
+  "tomorrowTop3": [
+    {
+      "id": "tmr-client",
+      "n": "01",
+      "text": "Client sync at 14:00 — prep notes",
+      "scope": "client-a"
+    },
+    {
+      "id": "tmr-pr42",
+      "n": "02",
+      "text": "Nudge PR #42 if still unreviewed",
+      "scope": "frontend",
+      "href": "https://github.com"
+    },
+    {
+      "id": "tmr-slack",
+      "n": "03",
+      "text": "Skim overnight Slack + security FYIs",
+      "scope": "general"
+    }
+  ],
+  "draftTargets": [
+    {
+      "id": "slack-demo-s1",
+      "channel": "slack",
+      "label": "#demo-backend · Alex 401s",
+      "where": "#demo-backend",
+      "from": "Alex",
+      "when": "DEMO",
+      "replyTo": "Can someone check the refresh-token 401s? Users are getting bounced after token refresh — unsure if it's expiry skew or a bad refresh path.",
+      "threadNote": "Thread start · no assignee yet",
+      "href": "https://slack.com",
+      "seed": "Hey Alex — looking into the refresh-token 401s now. Will update this thread once I can reproduce.",
+      "scope": "backend"
+    },
+    {
+      "id": "slack-demo-s2",
+      "channel": "slack",
+      "label": "#demo-frontend · logo thread",
+      "where": "#demo-frontend",
+      "from": "Sam",
+      "when": "DEMO",
+      "replyTo": "Logo cropped on mobile — looks like the hero image is clipping on smaller breakpoints.",
+      "threadNote": "Thread start · tied to PR #42",
+      "href": "https://slack.com",
+      "seed": "Sam — confirmed on mobile. I'll push a fix in PR #42 and ping when it's ready for review.",
+      "scope": "frontend"
+    },
+    {
+      "id": "gmail-demo-e1",
+      "channel": "gmail",
+      "label": "Invite: demo/repo",
+      "where": "Inbox · invite",
+      "from": "demo-collab@example.com",
+      "when": "DEMO",
+      "replyTo": "You've been invited to collaborate on demo/repo. Accept the invitation to get write access, or decline if this was unexpected.",
+      "threadNote": "Example actionable email",
+      "href": "https://mail.google.com",
+      "seed": "Thanks for the invite — I'll accept and confirm access shortly. Let me know if there's a preferred branch to start on.",
+      "scope": "client-a"
+    }
+  ]
+}
