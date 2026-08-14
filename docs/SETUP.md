@@ -24,12 +24,18 @@ Connect these in **Cursor Settings → Tools & MCP** (or Marketplace plugins). T
 3. If Chrome defaults to a personal account, choose “Use another account”.
 4. These plugins only work with Google / Google Workspace mailboxes.
 
-## 4. First dashboard refresh
+## 4. Jira (Atlassian)
+
+1. Install the Atlassian plugin / MCP.
+2. Click **Authenticate** → OAuth into your Jira Cloud site.
+3. Confirm with Agent: “Who am I on Jira?” then refresh the dashboard so tickets appear.
+
+## 5. First dashboard refresh
 
 In Agent chat:
 
 ```text
-Refresh the work dashboard from Slack, Gmail, Calendar, and GitHub.
+Refresh the work dashboard from Slack, Gmail, Calendar, GitHub, and Jira.
 Use the template in canvases/work-dashboard.canvas.tsx.
 Replace demo data. Keep the UI concise. Thread starts only for Slack.
 ```
@@ -50,3 +56,4 @@ Copy the canvas into Cursor’s canvases folder if it does not appear beside cha
 - **GitHub timeouts** — Reload MCP → restart Cursor → re-save PAT.
 - **Slack needsAuth** — complete OAuth; check admin app approval.
 - **Wrong Gmail** — Clear MCP tokens / reconnect with the correct Google account.
+- **Jira empty assigned list** — site may still have unassigned / other-assignee tickets; refresh still lists open board items.
