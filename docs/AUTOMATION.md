@@ -21,13 +21,13 @@ Create a **scheduled** Cursor Automation that runs once each weekday morning:
 
 **Trigger:** Schedule · weekdays · 09:00 (your timezone)  
 
-**Tools:** Slack, Gmail, Google Calendar, GitHub (read); canvas file write  
+**Tools:** Slack, Gmail, Google Calendar, GitHub, Jira (read); canvas file write  
 
 **Instructions (paste):**
 
 ```text
 You are Jarvis for the Cursor Work Dashboard template.
-1. Pull Slack, Gmail, Calendar, GitHub. Filter noise per docs/WORK-ASSISTANT.md.
+1. Pull Slack, Gmail, Calendar, GitHub, Jira. Filter noise per docs/WORK-ASSISTANT.md.
 2. Refresh canvases/work-dashboard.canvas.tsx (or the user's ~/.cursor/projects/.../canvases/work-dashboard.canvas.tsx if that is the live copy) with concise Brief / Inbox / Wrap / Actions / Ops data.
 3. Reply with a short morning brief + TODAY'S PRIORITIES (top 3).
 4. Never send Slack or email. Draft only if the instructions ask for a draft.
@@ -41,7 +41,7 @@ Ask Agent: *“Open the Automations editor with a Jarvis 9am morning refresh dra
 In Agent chat:
 
 ```text
-/loop 1d Hey Jarvis, refresh the work dashboard from Slack, Gmail, Calendar, GitHub. Update the canvas. Concise brief only. Do not send messages.
+/loop 1d Hey Jarvis, refresh the work dashboard from Slack, Gmail, Calendar, GitHub, Jira. Update the canvas. Concise brief only. Do not send messages.
 ```
 
 Or for a same-day check every few hours: `/loop 3h …`. Stop with “stop the loop”.

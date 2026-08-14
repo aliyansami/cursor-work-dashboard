@@ -220,6 +220,13 @@ const SOURCES: SourceRow[] = [
     note: "Add PAT in settings",
     setup: "Settings → Tools & MCP → GitHub → paste raw PAT (never commit)",
   },
+  {
+    name: "Jira",
+    account: "your-atlassian-site",
+    status: "offline",
+    note: "Connect MCP",
+    setup: "Settings → Tools & MCP → Atlassian → OAuth",
+  },
 ];
 
 const TASKS: WorkItem[] = [
@@ -270,7 +277,7 @@ const PRIORITIES: PriorityItem[] = [
   {
     id: "pri-mcp",
     n: "01",
-    text: "Connect Slack, Gmail, Calendar, GitHub MCP",
+    text: "Connect Slack, Gmail, Calendar, GitHub, Jira MCP",
     scope: "general",
   },
   {
@@ -765,7 +772,7 @@ function SignalStrip({ scope }: { scope: ScopeId }) {
         <Stat value={waiting} label="Waiting" tone={waiting ? "warning" : undefined} />
         <Stat value={closed} label="Closed" tone={closed ? "success" : undefined} />
         <Stat
-          value={scope === "all" ? `${live}/4` : String(drafts)}
+          value={scope === "all" ? `${live}/${SOURCES.length}` : String(drafts)}
           label={scope === "all" ? "Links up" : "Drafts"}
           tone={scope === "all" ? undefined : drafts ? "warning" : undefined}
         />
